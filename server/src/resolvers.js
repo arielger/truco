@@ -15,7 +15,13 @@ module.exports = {
       return dataSources.matchAPI.createMatch({ match: input, userId });
     },
     logInAsGuest: (parent, args, { dataSources }) =>
-      dataSources.userAPI.logInAsGuest()
+      dataSources.userAPI.logInAsGuest(),
+    joinMatch: (parent, { matchId }, { userId, dataSources }) => {
+      if (!userId) {
+        throw new Error("You must be logged in to join a match");
+      }
+      return dataSources.matchAPI.joinMatch({ matchId, userId });
+    }
   },
   Subscription: {
     matchAdded: {

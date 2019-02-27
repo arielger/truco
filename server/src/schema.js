@@ -11,11 +11,13 @@ const typeDefs = gql`
     playersCount: Int!
     points: Int!
     creator: Player!
+    players: [Player]!
   }
 
   type Player {
     id: ID!
     name: String
+    avatar: String
   }
 
   type Query {
@@ -30,6 +32,7 @@ const typeDefs = gql`
   type Mutation {
     logInAsGuest: LogInResult!
     createMatch(input: MatchInput!): Match!
+    joinMatch(matchId: String): Match!
   }
 
   type Subscription {

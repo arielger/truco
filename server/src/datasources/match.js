@@ -4,7 +4,6 @@ const { DataSource } = require("apollo-datasource");
 const { pubsub, events } = require("../subscriptions");
 
 const Match = mongoose.model("Match");
-const User = mongoose.model("User");
 
 class MatchAPI extends DataSource {
   constructor() {
@@ -28,21 +27,46 @@ class MatchAPI extends DataSource {
   async createMatch({ match, userId }) {
     const newMatch = await new Match({
       ...match,
-      creatorId: userId
+      creator: userId,
+      players: [userId]
     }).save();
-    const newMatchData = newMatch.toObject();
-    const creator = await User.findById(userId, { lean: true });
+
+    const newMatchData = (await newMatch
+      .populate("creator")
+      .populate("players")
+      .execPopulate()).toObject();
+
     pubsub.publish(events.MATCH_ADDED, { matchAdded: newMatchData });
-    const result = {
-      id: newMatchData._id,
-      ...R.pick(["playersCount", "points"], newMatchData),
-      creator: {
-        id: creator._id,
-        name: creator.name
-      }
-    };
-    console.log("result", result);
-    return result;
+    console.log("newMatchData", newMatchData);
+    return newMatchData;
+  }
+
+  async joinMatch({ matchId, userId }) {
+    const match = await Match.findById(matchId);
+
+    if (!match) {
+      throw new Error(`There is no match with the id ${matchId}`);
+    }
+
+    if (match.players.length >= match.playersCount) {
+      throw new Error("The match is already full");
+    }
+
+    if (match.creator === userId) {
+      throw new Error("Can't join your own match");
+    }
+
+    if (match.players.includes(userId)) {
+      throw new Error("You already joined this match");
+    }
+
+    const updatedMatch = await Match.findByIdAndUpdate(matchId, {
+      $push: { players: userId }
+    })
+      .populate("creator")
+      .populate("players");
+
+    return updatedMatch.toObject();
   }
 }
 

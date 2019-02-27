@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const shortid = require("shortid");
+const mongooseHidden = require("mongoose-hidden")();
 
 const matchSchema = new mongoose.Schema({
   _id: {
@@ -22,11 +23,24 @@ const matchSchema = new mongoose.Schema({
       message: props => `${props.value} is not a valid points number`
     }
   },
-  creatorId: {
+  creator: {
     type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
     required: true
-  }
+  },
+  players: [
+    {
+      type: String,
+      ref: "User"
+    }
+  ]
 });
+
+matchSchema.set("toObject", {
+  virtuals: true
+});
+
+matchSchema.plugin(mongooseHidden);
 
 const Match = mongoose.model("Match", matchSchema);
 

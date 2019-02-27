@@ -21,6 +21,7 @@
     "graphql-subscriptions": "^1.0.0",
     "jsonwebtoken": "^8.5.0",
     "mongoose": "^5.4.15",
+    "mongoose-hidden": "^1.6.1",
     "nodemon": "^1.18.10",
     "pg": "^7.8.1",
     "ramda": "^0.26.1",
