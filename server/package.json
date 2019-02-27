@@ -1,0 +1,30 @@
+{
+  "name": "truco",
+  "version": "1.0.0",
+  "description": "Multiplayer truco game made with GraphQL server + React.js SPA",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "db:migrations:all": "./node_modules/.bin/sequelize db:migrate",
+    "db:migrations:undo:all": "./node_modules/.bin/sequelize db:migrate:undo:all",
+    "db:migration:create": "./node_modules/.bin/sequelize migration:generate"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "apollo-datasource": "^0.3.1",
+    "apollo-server": "^2.4.6",
+    "dotenv": "^6.2.0",
+    "dotenv-safe": "^6.1.0",
+    "graphql": "^14.1.1",
+    "graphql-subscriptions": "^1.0.0",
+    "jsonwebtoken": "^8.5.0",
+    "mongoose": "^5.4.15",
+    "nodemon": "^1.18.10",
+    "pg": "^7.8.1",
+    "ramda": "^0.26.1",
+    "shortid": "^2.2.14",
+    "uuid": "^3.3.2"
+  }
+}
