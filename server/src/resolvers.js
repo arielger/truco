@@ -8,14 +8,18 @@ module.exports = {
       dataSources.matchAPI.getMatchById({ matchId: id })
   },
   Mutation: {
-    createMatch: (parent, { input }, { userId, dataSources }) => {
+    createMatch: (
+      parent,
+      { playersCount, points },
+      { userId, dataSources }
+    ) => {
       if (!userId) {
         throw new Error("You must be logged in to create a match");
       }
-      return dataSources.matchAPI.createMatch({ match: input, userId });
+      return dataSources.matchAPI.createMatch({ playersCount, points, userId });
     },
-    logInAsGuest: (parent, args, { dataSources }) =>
-      dataSources.userAPI.logInAsGuest(),
+    logInAsGuest: (parent, { name, avatar }, { dataSources }) =>
+      dataSources.userAPI.logInAsGuest({ name, avatar }),
     joinMatch: (parent, { matchId }, { userId, dataSources }) => {
       if (!userId) {
         throw new Error("You must be logged in to join a match");

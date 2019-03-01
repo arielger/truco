@@ -10,9 +10,10 @@ class UserAPI extends DataSource {
     this.context = config.context;
   }
 
-  async logInAsGuest() {
+  async logInAsGuest({ name, avatar }) {
     const newUser = await User.create({
-      name: "Anonymous user"
+      name,
+      avatar
     });
 
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {

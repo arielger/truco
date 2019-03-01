@@ -15,8 +15,10 @@ class MatchAPI extends DataSource {
   }
 
   async getAllMatches() {
-    const matches = await Match.find({});
-    return matches;
+    const matches = await Match.find()
+      .populate("creator")
+      .populate("players");
+    return matches.map(m => m.toObject());
   }
 
   async getMatchById({ matchId }) {
@@ -24,9 +26,10 @@ class MatchAPI extends DataSource {
     return match;
   }
 
-  async createMatch({ match, userId }) {
+  async createMatch({ playersCount, points, userId }) {
     const newMatch = await new Match({
-      ...match,
+      playersCount,
+      points,
       creator: userId,
       players: [userId]
     }).save();
@@ -37,7 +40,6 @@ class MatchAPI extends DataSource {
       .execPopulate()).toObject();
 
     pubsub.publish(events.MATCH_ADDED, { matchAdded: newMatchData });
-    console.log("newMatchData", newMatchData);
     return newMatchData;
   }
 

@@ -26,6 +26,7 @@
     "pg": "^7.8.1",
     "ramda": "^0.26.1",
     "shortid": "^2.2.14",
+    "subscriptions-transport-ws": "^0.9.15",
     "uuid": "^3.3.2"
   }
 }
