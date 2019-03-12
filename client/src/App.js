@@ -10,8 +10,11 @@ import { WebSocketLink } from "apollo-link-ws";
 import { SubscriptionClient } from "subscriptions-transport-ws";
 import { BrowserRouter, Switch, Route, Redirect } from "react-router-dom";
 import gql from "graphql-tag";
+import ReactModal from "react-modal";
 
-import { Login, Matches } from "./screens";
+import { Login, Matches, Match } from "./screens";
+
+ReactModal.setAppElement("#root");
 
 const authLink = setContext((_, { headers = {} }) => {
   const token = localStorage.getItem("token");
@@ -74,39 +77,42 @@ const IS_LOGGED_IN = gql`
 
 const App = () => {
   return (
-    <ApolloProvider client={client}>
-      <Query query={IS_LOGGED_IN}>
-        {({ data: { isLoggedIn } }) => (
-          <Fragment>
-            <BrowserRouter>
-              {isLoggedIn ? (
-                <Switch>
-                  <Route path="/matches" component={Matches} />
-                  <Redirect to="/matches" />
-                </Switch>
-              ) : (
-                <Switch>
-                  <Route path="/login" component={Login} />
-                  <Redirect to="/login" />
-                </Switch>
+    <div id="main">
+      <ApolloProvider client={client}>
+        <Query query={IS_LOGGED_IN}>
+          {({ data: { isLoggedIn } }) => (
+            <Fragment>
+              <BrowserRouter>
+                {isLoggedIn ? (
+                  <Switch>
+                    <Route path="/matches" component={Matches} />
+                    <Route path="/match/:matchId" component={Match} />
+                    <Redirect to="/matches" />
+                  </Switch>
+                ) : (
+                  <Switch>
+                    <Route path="/login" component={Login} />
+                    <Redirect to="/login" />
+                  </Switch>
+                )}
+              </BrowserRouter>
+              {isLoggedIn && (
+                <button
+                  onClick={() => {
+                    localStorage.removeItem("token");
+                    client.writeData({
+                      data: { isLoggedIn: false, token: null }
+                    });
+                  }}
+                >
+                  Log out
+                </button>
               )}
-            </BrowserRouter>
-            {isLoggedIn && (
-              <button
-                onClick={() => {
-                  localStorage.removeItem("token");
-                  client.writeData({
-                    data: { isLoggedIn: false, token: null }
-                  });
-                }}
-              >
-                Log out
-              </button>
-            )}
-          </Fragment>
-        )}
-      </Query>
-    </ApolloProvider>
+            </Fragment>
+          )}
+        </Query>
+      </ApolloProvider>
+    </div>
   );
 };
 
