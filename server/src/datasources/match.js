@@ -39,7 +39,12 @@ class MatchAPI extends DataSource {
       .populate("players")
       .execPopulate()).toObject();
 
-    pubsub.publish(events.MATCH_ADDED, { matchAdded: newMatchData });
+    pubsub.publish(events.MATCH_ADDED, {
+      matchUpdated: {
+        type: "NEW_MATCH",
+        ...newMatchData
+      }
+    });
     return newMatchData;
   }
 
@@ -62,13 +67,28 @@ class MatchAPI extends DataSource {
       throw new Error("You already joined this match");
     }
 
-    const updatedMatch = await Match.findByIdAndUpdate(matchId, {
-      $push: { players: userId }
-    })
+    const updatedMatch = await Match.findByIdAndUpdate(
+      matchId,
+      {
+        $push: { players: userId }
+      },
+      { new: true }
+    )
       .populate("creator")
       .populate("players");
 
-    return updatedMatch.toObject();
+    const updatedMatchData = updatedMatch.toObject();
+
+    // If the match is full remove it from the list of matches
+    const isFull = updatedMatchData.players.length >= match.playersCount;
+    pubsub.publish(isFull ? events.MATCH_REMOVED : events.MATCH_UPDATED, {
+      matchUpdated: {
+        type: isFull ? "DELETED_MATCH" : "UPDATED_MATCH",
+        ...updatedMatchData
+      }
+    });
+
+    return updatedMatchData;
   }
 }
 

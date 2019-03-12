@@ -28,8 +28,13 @@ module.exports = {
     }
   },
   Subscription: {
-    matchAdded: {
-      subscribe: () => pubsub.asyncIterator(events.MATCH_ADDED)
+    matchUpdated: {
+      subscribe: () =>
+        pubsub.asyncIterator([
+          events.MATCH_ADDED,
+          events.MATCH_UPDATED,
+          events.MATCH_REMOVED
+        ])
     }
   }
 };

@@ -1,16 +1,39 @@
 import React from "react";
 import * as R from "ramda";
 import Modal from "react-modal";
+import gql from "graphql-tag";
 import { Formik, Form, Field } from "formik";
 
-export default function NewMatch({ visible, onClose, onSubmit }) {
+const CREATE_MATCH = gql`
+  mutation createMatch($playersCount: Int!, $points: Int!) {
+    createMatch(playersCount: $playersCount, points: $points) {
+      id
+    }
+  }
+`;
+
+export default function NewMatch({ visible, onClose, client, history }) {
+  const createNewMatch = matchData => {
+    client
+      .mutate({
+        variables: matchData,
+        mutation: CREATE_MATCH
+      })
+      .then(({ data: { createMatch: { id } } }) => {
+        history.push(`/match/${id}`);
+      })
+      .catch(error => {
+        console.log(error);
+      });
+  };
+
   return (
     <Modal isOpen={visible} onRequestClose={onClose}>
       <h1>Nuevo partido</h1>
       <Formik
         initialValues={{ playersCount: 2, points: 30 }}
         onSubmit={(values, { setSubmitting }) => {
-          onSubmit(
+          createNewMatch(
             R.evolve({
               playersCount: parseInt,
               points: parseInt

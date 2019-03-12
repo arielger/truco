@@ -1,12 +1,27 @@
 const { gql } = require("apollo-server");
 
+const matchFields = `
+  id: ID!
+  playersCount: Int!
+  points: Int!
+  creator: Player!
+  players: [Player]!
+`;
+
 const typeDefs = gql`
   type Match {
-    id: ID!
-    playersCount: Int!
-    points: Int!
-    creator: Player!
-    players: [Player]!
+    ${matchFields}
+  }
+
+  enum MatchUpdateType {
+    NEW_MATCH
+    UPDATED_MATCH
+    DELETED_MATCH
+  }
+
+  type MatchUpdate {
+    type: MatchUpdateType
+    ${matchFields}
   }
 
   type Player {
@@ -27,11 +42,11 @@ const typeDefs = gql`
   type Mutation {
     logInAsGuest(name: String!, avatar: String): LogInResult!
     createMatch(playersCount: Int!, points: Int!): Match!
-    joinMatch(matchId: String!): Match!
+    joinMatch(matchId: ID!): Match!
   }
 
   type Subscription {
-    matchAdded: Match!
+    matchUpdated: MatchUpdate!
   }
 `;
 
