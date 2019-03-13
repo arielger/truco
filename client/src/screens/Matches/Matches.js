@@ -17,7 +17,8 @@ const MATCHES_QUERY = gql`
         avatar
       }
       players {
-        id
+        name
+        avatar
       }
     }
   }
@@ -32,9 +33,11 @@ const MATCHES_SUBSCRIPTION = gql`
       type
       creator {
         name
+        avatar
       }
       players {
         id
+        avatar
       }
     }
   }
@@ -144,11 +147,28 @@ const MatchesList = ({ subscribeToUpdates, data, loading, error }) => {
                 className={styles["match"]}
                 key={match.id}
               >
-                <h2>Partida de {match.creator.name}</h2>
+                <img
+                  className={styles["creator-avatar"]}
+                  src={match.creator.avatar}
+                  alt={`${match.creator.name} avatar`}
+                />
+                <h2>{match.creator.name}</h2>
                 <h3>A {match.points} puntos</h3>
-                <h3>
+                <div>
                   Jugadores: {match.players.length}/{match.playersCount}
-                </h3>
+                  <div className={styles["avatars"]}>
+                    {match.players.map(player => (
+                      <img
+                        className={styles["player-avatar"]}
+                        src={player.avatar}
+                        alt={`${player.name} avatar`}
+                      />
+                    ))}
+                    {Array(match.playersCount - match.players.length).fill(
+                      <div className={styles["no-player-avatar"]} />
+                    )}
+                  </div>
+                </div>
               </div>
             )
           }
