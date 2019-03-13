@@ -4,6 +4,7 @@ import { withApollo, Query, Mutation } from "react-apollo";
 import { Redirect } from "react-router-dom";
 import gql from "graphql-tag";
 import NewMatch from "./NewMatch";
+import styles from "./Matches.module.scss";
 
 const MATCHES_QUERY = gql`
   {
@@ -13,6 +14,7 @@ const MATCHES_QUERY = gql`
       points
       creator {
         name
+        avatar
       }
       players {
         id
@@ -54,7 +56,6 @@ const handleMatchUpdates = (
     }
   }
 ) => {
-  console.log("matchUpdated:", matchUpdated);
   const { type, ...matchData } = matchUpdated;
   switch (type) {
     case "NEW_MATCH": {
@@ -90,11 +91,13 @@ const Matches = ({ history, client }) => {
   );
 
   return (
-    <div>
-      <h1>Matches</h1>
-      <button onClick={() => setNewMatchModalVisible(true)}>
-        Crear partido
-      </button>
+    <div className={styles["main"]}>
+      <div className={styles["header"]}>
+        <h1>Mesas</h1>
+        <button onClick={() => setNewMatchModalVisible(true)}>
+          Crear mesa
+        </button>
+      </div>
       <NewMatch
         visible={isNewMatchModalVisible}
         onClose={() => setNewMatchModalVisible(false)}
@@ -127,30 +130,29 @@ const MatchesList = ({ subscribeToUpdates, data, loading, error }) => {
   }, []);
 
   return (
-    <ul>
+    <ul className={styles["matches"]}>
       {data.matches.map(match => (
-        <div key={match.id} style={{ border: "1px solid black" }}>
-          <h2>Partida de {match.creator.name}</h2>
-          <h3>Puntos: {match.points}</h3>
-          <h3>
-            Jugadores: {match.players.length}/{match.playersCount}
-          </h3>
-          <Mutation mutation={JOIN_MATCH}>
-            {(joinMatch, { data, loading, error }) =>
-              data ? (
-                <Redirect push to={`/match/${data.joinMatch.id}`} />
-              ) : (
-                <button
-                  onClick={() => {
-                    joinMatch({ variables: { matchId: match.id } });
-                  }}
-                >
-                  Unirse al partido
-                </button>
-              )
-            }
-          </Mutation>
-        </div>
+        <Mutation mutation={JOIN_MATCH}>
+          {(joinMatch, { data, loading, error }) =>
+            data ? (
+              <Redirect push to={`/match/${data.joinMatch.id}`} />
+            ) : (
+              <div
+                onClick={() => {
+                  joinMatch({ variables: { matchId: match.id } });
+                }}
+                className={styles["match"]}
+                key={match.id}
+              >
+                <h2>Partida de {match.creator.name}</h2>
+                <h3>A {match.points} puntos</h3>
+                <h3>
+                  Jugadores: {match.players.length}/{match.playersCount}
+                </h3>
+              </div>
+            )
+          }
+        </Mutation>
       ))}
     </ul>
   );

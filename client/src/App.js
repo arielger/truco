@@ -13,6 +13,7 @@ import gql from "graphql-tag";
 import ReactModal from "react-modal";
 
 import { Login, Matches, Match } from "./screens";
+import Header from "./components/Header";
 
 ReactModal.setAppElement("#root");
 
@@ -84,11 +85,14 @@ const App = () => {
             <Fragment>
               <BrowserRouter>
                 {isLoggedIn ? (
-                  <Switch>
-                    <Route path="/matches" component={Matches} />
-                    <Route path="/match/:matchId" component={Match} />
-                    <Redirect to="/matches" />
-                  </Switch>
+                  <div>
+                    <Header client={client} />
+                    <Switch>
+                      <Route path="/matches" component={Matches} />
+                      <Route path="/match/:matchId" component={Match} />
+                      <Redirect to="/matches" />
+                    </Switch>
+                  </div>
                 ) : (
                   <Switch>
                     <Route path="/login" component={Login} />
@@ -96,18 +100,6 @@ const App = () => {
                   </Switch>
                 )}
               </BrowserRouter>
-              {isLoggedIn && (
-                <button
-                  onClick={() => {
-                    localStorage.removeItem("token");
-                    client.writeData({
-                      data: { isLoggedIn: false, token: null }
-                    });
-                  }}
-                >
-                  Log out
-                </button>
-              )}
             </Fragment>
           )}
         </Query>

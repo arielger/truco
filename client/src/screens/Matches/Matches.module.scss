@@ -1,0 +1,29 @@
+.main {
+  padding: 0 24px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.matches {
+  padding: 0;
+  margin: 0;
+}
+
+.match {
+  background-color: #2d3039;
+  border-radius: 6px;
+  padding: 8px 24px;
+  margin-bottom: 16px;
+  cursor: pointer;
+
+  &:hover,
+  &:focus {
+    transition: transform 0.5s;
+    transform: scale(1.01);
+  }
+}
