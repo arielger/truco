@@ -10,3 +10,15 @@
 .title {
   margin: 0;
 }
+
+.right-container {
+  display: flex;
+  align-items: center;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}

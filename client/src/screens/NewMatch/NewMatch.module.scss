@@ -1,0 +1,14 @@
+.modal {
+  width: 400px;
+  background-color: #131418;
+  padding: 24px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 6px;
+
+  .title {
+    margin-top: 0;
+  }
+}

@@ -42,11 +42,6 @@ const server = new ApolloServer({
       });
     }
   }
-  // subscriptions: {
-  //   onConnect(connectionParams, webSocket, wsContext) {
-
-  //   }
-  // }
 });
 
 server.listen({ port: PORT }).then(({ url, subscriptionsUrl }) => {

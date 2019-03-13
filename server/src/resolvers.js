@@ -5,7 +5,13 @@ module.exports = {
     matches: async (parent, args, { dataSources }) =>
       dataSources.matchAPI.getAllMatches(),
     match: async (_, { id }, { dataSources }) =>
-      dataSources.matchAPI.getMatchById({ matchId: id })
+      dataSources.matchAPI.getMatchById({ matchId: id }),
+    me: async (_, { id }, { userId, dataSources }) => {
+      if (!userId) {
+        throw new Error("You must be logged in to get your profile");
+      }
+      return dataSources.userAPI.getUserInfo({ userId });
+    }
   },
   Mutation: {
     createMatch: (

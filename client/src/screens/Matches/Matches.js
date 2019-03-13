@@ -3,7 +3,7 @@ import * as R from "ramda";
 import { withApollo, Query, Mutation } from "react-apollo";
 import { Redirect } from "react-router-dom";
 import gql from "graphql-tag";
-import NewMatch from "./NewMatch";
+import NewMatch from "../NewMatch";
 import styles from "./Matches.module.scss";
 
 const MATCHES_QUERY = gql`
@@ -36,7 +36,7 @@ const MATCHES_SUBSCRIPTION = gql`
         avatar
       }
       players {
-        id
+        name
         avatar
       }
     }
@@ -70,8 +70,8 @@ const handleMatchUpdates = (
     case "UPDATED_MATCH": {
       return {
         ...prev,
-        matches: R.when(R.propEq("id", matchData.id), R.mergeLeft(matchData))(
-          prev.matches
+        matches: prev.matches.map(match =>
+          matchData.id === match.id ? matchData : match
         )
       };
     }
@@ -111,12 +111,12 @@ const Matches = ({ history, client }) => {
         {({ subscribeToMore, ...result }) => (
           <MatchesList
             {...result}
-            subscribeToUpdates={() => {
+            subscribeToUpdates={() =>
               subscribeToMore({
                 document: MATCHES_SUBSCRIPTION,
                 updateQuery: handleMatchUpdates
-              });
-            }}
+              })
+            }
           />
         )}
       </Query>
@@ -129,13 +129,16 @@ const MatchesList = ({ subscribeToUpdates, data, loading, error }) => {
   if (error) return <p>Error :(</p>;
 
   React.useEffect(() => {
-    subscribeToUpdates();
+    const unsubscribe = subscribeToUpdates();
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   return (
     <ul className={styles["matches"]}>
       {data.matches.map(match => (
-        <Mutation mutation={JOIN_MATCH}>
+        <Mutation key={match.id} mutation={JOIN_MATCH}>
           {(joinMatch, { data, loading, error }) =>
             data ? (
               <Redirect push to={`/match/${data.joinMatch.id}`} />
@@ -159,14 +162,17 @@ const MatchesList = ({ subscribeToUpdates, data, loading, error }) => {
                   <div className={styles["avatars"]}>
                     {match.players.map(player => (
                       <img
+                        key={player.name}
                         className={styles["player-avatar"]}
                         src={player.avatar}
                         alt={`${player.name} avatar`}
                       />
                     ))}
-                    {Array(match.playersCount - match.players.length).fill(
-                      <div className={styles["no-player-avatar"]} />
-                    )}
+                    {Array(match.playersCount - match.players.length)
+                      .fill(undefined)
+                      .map((_, i) => (
+                        <div key={i} className={styles["no-player-avatar"]} />
+                      ))}
                   </div>
                 </div>
               </div>

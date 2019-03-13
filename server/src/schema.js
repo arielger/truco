@@ -26,13 +26,14 @@ const typeDefs = gql`
 
   type Player {
     id: ID!
-    name: String
+    name: String!
     avatar: String
   }
 
   type Query {
     matches: [Match]!
     match(id: ID!): Match
+    me: Player!
   }
 
   type LogInResult {

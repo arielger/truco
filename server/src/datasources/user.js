@@ -24,6 +24,11 @@ class UserAPI extends DataSource {
       token
     };
   }
+
+  async getUserInfo({ userId }) {
+    const user = await User.findById(userId);
+    return user.toObject();
+  }
 }
 
 module.exports = UserAPI;

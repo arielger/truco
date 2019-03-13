@@ -5,7 +5,7 @@ export default function Match({ match }) {
   return (
     <div>
       <Prompt message="Estas seguro que quieres abandonar la partida?" />
-      Match {match.params.matchId}
+      <h1>Match {match.params.matchId}</h1>
     </div>
   );
 }

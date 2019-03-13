@@ -4,6 +4,8 @@ import Modal from "react-modal";
 import gql from "graphql-tag";
 import { Formik, Form, Field } from "formik";
 
+import styles from "./NewMatch.module.scss";
+
 const CREATE_MATCH = gql`
   mutation createMatch($playersCount: Int!, $points: Int!) {
     createMatch(playersCount: $playersCount, points: $points) {
@@ -28,8 +30,12 @@ export default function NewMatch({ visible, onClose, client, history }) {
   };
 
   return (
-    <Modal isOpen={visible} onRequestClose={onClose}>
-      <h1>Nuevo partido</h1>
+    <Modal
+      isOpen={visible}
+      onRequestClose={onClose}
+      className={styles["modal"]}
+    >
+      <h1 className={styles["title"]}>Nuevo partido</h1>
       <Formik
         initialValues={{ playersCount: 2, points: 30 }}
         onSubmit={(values, { setSubmitting }) => {
