@@ -1,7 +1,6 @@
 import React from "react";
 import * as R from "ramda";
 import { withApollo, Query, Mutation } from "react-apollo";
-import { Redirect } from "react-router-dom";
 import gql from "graphql-tag";
 import NewMatch from "../NewMatch";
 import styles from "./Matches.module.scss";
@@ -26,7 +25,7 @@ const MATCHES_QUERY = gql`
 
 const MATCHES_SUBSCRIPTION = gql`
   subscription SubscribeNewMatches {
-    matchUpdated {
+    matchListUpdated {
       id
       playersCount
       points
@@ -55,11 +54,11 @@ const handleMatchUpdates = (
   prev,
   {
     subscriptionData: {
-      data: { matchUpdated }
+      data: { matchListUpdated }
     }
   }
 ) => {
-  const { type, ...matchData } = matchUpdated;
+  const { type, ...matchData } = matchListUpdated;
   switch (type) {
     case "NEW_MATCH": {
       return {
@@ -110,6 +109,7 @@ const Matches = ({ history, client }) => {
       <Query query={MATCHES_QUERY} fetchPolicy="cache-and-network">
         {({ subscribeToMore, ...result }) => (
           <MatchesList
+            history={history}
             {...result}
             subscribeToUpdates={() =>
               subscribeToMore({
@@ -124,7 +124,7 @@ const Matches = ({ history, client }) => {
   );
 };
 
-const MatchesList = ({ subscribeToUpdates, data, loading, error }) => {
+const MatchesList = ({ history, subscribeToUpdates, data, loading, error }) => {
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error :(</p>;
 
@@ -138,46 +138,48 @@ const MatchesList = ({ subscribeToUpdates, data, loading, error }) => {
   return (
     <ul className={styles["matches"]}>
       {data.matches.map(match => (
-        <Mutation key={match.id} mutation={JOIN_MATCH}>
-          {(joinMatch, { data, loading, error }) =>
-            data ? (
-              <Redirect push to={`/match/${data.joinMatch.id}`} />
-            ) : (
-              <div
-                onClick={() => {
-                  joinMatch({ variables: { matchId: match.id } });
-                }}
-                className={styles["match"]}
-                key={match.id}
-              >
-                <img
-                  className={styles["creator-avatar"]}
-                  src={match.creator.avatar}
-                  alt={`${match.creator.name} avatar`}
-                />
-                <h2>{match.creator.name}</h2>
-                <h3>A {match.points} puntos</h3>
-                <div>
-                  Jugadores: {match.players.length}/{match.playersCount}
-                  <div className={styles["avatars"]}>
-                    {match.players.map(player => (
-                      <img
-                        key={player.name}
-                        className={styles["player-avatar"]}
-                        src={player.avatar}
-                        alt={`${player.name} avatar`}
-                      />
+        <Mutation
+          key={match.id}
+          mutation={JOIN_MATCH}
+          onCompleted={({ joinMatch: { id } }) => {
+            history.push(`/match/${id}`);
+          }}
+        >
+          {(joinMatch, { data, loading, error }) => (
+            <div
+              onClick={() => {
+                joinMatch({ variables: { matchId: match.id } });
+              }}
+              className={styles["match"]}
+              key={match.id}
+            >
+              <img
+                className={styles["creator-avatar"]}
+                src={match.creator.avatar}
+                alt={`${match.creator.name} avatar`}
+              />
+              <h2>{match.creator.name}</h2>
+              <h3>A {match.points} puntos</h3>
+              <div>
+                Jugadores: {match.players.length}/{match.playersCount}
+                <div className={styles["avatars"]}>
+                  {match.players.map(player => (
+                    <img
+                      key={player.name}
+                      className={styles["player-avatar"]}
+                      src={player.avatar}
+                      alt={`${player.name} avatar`}
+                    />
+                  ))}
+                  {Array(match.playersCount - match.players.length)
+                    .fill(undefined)
+                    .map((_, i) => (
+                      <div key={i} className={styles["no-player-avatar"]} />
                     ))}
-                    {Array(match.playersCount - match.players.length)
-                      .fill(undefined)
-                      .map((_, i) => (
-                        <div key={i} className={styles["no-player-avatar"]} />
-                      ))}
-                  </div>
                 </div>
               </div>
-            )
-          }
+            </div>
+          )}
         </Mutation>
       ))}
     </ul>

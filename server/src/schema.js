@@ -2,6 +2,7 @@ const { gql } = require("apollo-server");
 
 const matchFields = `
   id: ID!
+  status: MatchStatus!
   playersCount: Int!
   points: Int!
   creator: Player!
@@ -9,14 +10,30 @@ const matchFields = `
 `;
 
 const typeDefs = gql`
+  enum MatchStatus {
+    waiting
+    playing
+    finished
+  }
+
   type Match {
     ${matchFields}
   }
 
-  enum MatchUpdateType {
+  enum MatchListUpdateType {
     NEW_MATCH
     UPDATED_MATCH
     DELETED_MATCH
+  }
+
+  type MatchListUpdate {
+    type: MatchListUpdateType
+    ${matchFields}
+  }
+
+  enum MatchUpdateType {
+    NEW_PLAYER
+    NEW_MOVE
   }
 
   type MatchUpdate {
@@ -47,7 +64,8 @@ const typeDefs = gql`
   }
 
   type Subscription {
-    matchUpdated: MatchUpdate!
+    matchListUpdated: MatchListUpdate!
+    matchUpdated(matchId: ID!): MatchUpdate!
   }
 `;
 

@@ -1,3 +1,5 @@
+const { withFilter } = require("apollo-server");
+
 const { pubsub, events } = require("./subscriptions");
 
 module.exports = {
@@ -39,13 +41,19 @@ module.exports = {
     }
   },
   Subscription: {
-    matchUpdated: {
+    matchListUpdated: {
       subscribe: () =>
         pubsub.asyncIterator([
           events.MATCH_ADDED,
           events.MATCH_UPDATED,
           events.MATCH_REMOVED
         ])
+    },
+    matchUpdated: {
+      subscribe: withFilter(
+        () => pubsub.asyncIterator([events.NEW_PLAYER, events.NEW_MOVE]),
+        (payload, variables) => variables.matchId === payload.matchUpdated.id
+      )
     }
   }
 };

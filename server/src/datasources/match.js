@@ -25,7 +25,9 @@ class MatchAPI extends DataSource {
   }
 
   async getMatchById({ matchId }) {
-    const match = await Match.findById(matchId);
+    const match = await Match.findById(matchId)
+      .populate("creator")
+      .populate("players");
     return match;
   }
 
@@ -43,7 +45,7 @@ class MatchAPI extends DataSource {
       .execPopulate()).toObject();
 
     pubsub.publish(events.MATCH_ADDED, {
-      matchUpdated: {
+      matchListUpdated: {
         type: "NEW_MATCH",
         ...newMatchData
       }
@@ -85,9 +87,13 @@ class MatchAPI extends DataSource {
 
     const updatedMatchData = updatedMatch.toObject();
 
+    pubsub.publish(events.NEW_PLAYER, {
+      matchUpdated: { ...updatedMatchData, type: "NEW_PLAYER" }
+    });
+
     // If the match is full remove it from the list of matches
     pubsub.publish(isFull ? events.MATCH_REMOVED : events.MATCH_UPDATED, {
-      matchUpdated: {
+      matchListUpdated: {
         type: isFull ? "DELETED_MATCH" : "UPDATED_MATCH",
         ...updatedMatchData
       }
