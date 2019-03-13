@@ -2,8 +2,13 @@ const { pubsub, events } = require("./subscriptions");
 
 module.exports = {
   Query: {
-    matches: async (parent, args, { dataSources }) =>
-      dataSources.matchAPI.getAllMatches(),
+    matches: async (parent, args, { userId, dataSources }) => {
+      if (!userId) {
+        throw new Error("You must be logged in to get the matches list");
+      }
+
+      return dataSources.matchAPI.getAllMatches({ userId });
+    },
     match: async (_, { id }, { dataSources }) =>
       dataSources.matchAPI.getMatchById({ matchId: id }),
     me: async (_, { id }, { userId, dataSources }) => {

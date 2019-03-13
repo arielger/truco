@@ -7,6 +7,12 @@ const matchSchema = new mongoose.Schema({
     type: String,
     default: shortid.generate
   },
+  status: {
+    type: String,
+    enum: ["waiting", "playing", "finished"],
+    required: true,
+    default: "waiting"
+  },
   playersCount: {
     type: Number,
     required: true,

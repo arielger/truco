@@ -14,8 +14,11 @@ class MatchAPI extends DataSource {
     this.context = config.context;
   }
 
-  async getAllMatches() {
-    const matches = await Match.find()
+  async getAllMatches({ userId }) {
+    const matches = await Match.find({
+      status: "waiting",
+      creator: { $ne: userId }
+    })
       .populate("creator")
       .populate("players");
     return matches.map(m => m.toObject());
@@ -67,10 +70,13 @@ class MatchAPI extends DataSource {
       throw new Error("You already joined this match");
     }
 
+    const isFull = match.players.length + 1 >= match.playersCount;
+
     const updatedMatch = await Match.findByIdAndUpdate(
       matchId,
       {
-        $push: { players: userId }
+        $push: { players: userId },
+        ...(isFull ? { status: "playing" } : {})
       },
       { new: true }
     )
@@ -80,7 +86,6 @@ class MatchAPI extends DataSource {
     const updatedMatchData = updatedMatch.toObject();
 
     // If the match is full remove it from the list of matches
-    const isFull = updatedMatchData.players.length >= match.playersCount;
     pubsub.publish(isFull ? events.MATCH_REMOVED : events.MATCH_UPDATED, {
       matchUpdated: {
         type: isFull ? "DELETED_MATCH" : "UPDATED_MATCH",
