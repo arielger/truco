@@ -11,8 +11,13 @@ module.exports = {
 
       return dataSources.matchAPI.getAllMatches({ userId });
     },
-    match: async (_, { id }, { dataSources }) =>
-      dataSources.matchAPI.getMatchById({ matchId: id }),
+    match: async (_, { id }, { userId, dataSources }) => {
+      if (!userId) {
+        throw new Error("You must be logged in to access match data");
+      }
+
+      return dataSources.matchAPI.getMatchById({ matchId: id, userId });
+    },
     me: async (_, { id }, { userId, dataSources }) => {
       if (!userId) {
         throw new Error("You must be logged in to get your profile");
@@ -38,6 +43,12 @@ module.exports = {
         throw new Error("You must be logged in to join a match");
       }
       return dataSources.matchAPI.joinMatch({ matchId, userId });
+    },
+    playCard: (parent, { matchId, cardId }, { userId, dataSources }) => {
+      if (!userId) {
+        throw new Error("You must be logged in to play a card");
+      }
+      return dataSources.matchAPI.playCard({ matchId, userId, cardId });
     }
   },
   Subscription: {
@@ -51,8 +62,21 @@ module.exports = {
     },
     matchUpdated: {
       subscribe: withFilter(
-        () => pubsub.asyncIterator([events.NEW_PLAYER, events.NEW_MOVE]),
-        (payload, variables) => variables.matchId === payload.matchUpdated.id
+        () =>
+          pubsub.asyncIterator([
+            events.NEW_PLAYER,
+            events.START_GAME,
+            events.NEW_MOVE
+          ]),
+        (payload, variables, context) => {
+          const isSubscribedToMatch =
+            variables.matchId === payload.matchUpdated.id;
+          // If update is only for one user (e.g. when the update contains the user cards)
+          const isUpdateForUser = payload.userId
+            ? payload.userId === context.userId
+            : true;
+          return isSubscribedToMatch && isUpdateForUser;
+        }
       )
     }
   }

@@ -7,6 +7,7 @@ module.exports = {
     MATCH_UPDATED: "MATCH_UPDATED",
     MATCH_REMOVED: "MATCH_REMOVED",
     NEW_PLAYER: "NEW_PLAYER",
+    START_GAME: "START_GAME",
     NEW_MOVE: "NEW_MOVE"
   }
 };

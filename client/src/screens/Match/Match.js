@@ -1,9 +1,11 @@
 import React from "react";
-import { Query } from "react-apollo";
+import * as R from "ramda";
+import { Query, Mutation } from "react-apollo";
 import { Prompt } from "react-router-dom";
 import gql from "graphql-tag";
 
 import styles from "./Match.module.scss";
+import Card from "../../components/Card";
 
 const matchFields = `
   status
@@ -17,6 +19,11 @@ const matchFields = `
     id
     name
     avatar
+  }
+  myCards {
+    id
+    card
+    played
   }
 `;
 
@@ -37,7 +44,16 @@ const MATCH_SUBSCRIPTION = gql`
   }
 `;
 
-const MatchInner = ({ subscribeToUpdates, data, loading, error }) => {
+const PLAY_CARD = gql`
+  mutation playCard($matchId: ID!, $cardId: ID!) {
+    playCard(matchId: $matchId, cardId: $cardId) {
+      card
+      played
+    }
+  }
+`;
+
+const MatchInner = ({ matchId, subscribeToUpdates, data, loading, error }) => {
   React.useEffect(() => {
     const unsubscribe = subscribeToUpdates();
     return () => {
@@ -73,7 +89,22 @@ const MatchInner = ({ subscribeToUpdates, data, loading, error }) => {
       )}
       {data.match.status === "playing" && (
         <div>
-          <h1>Jugando partida...</h1>
+          <div className={styles["cards"]}>
+            <Mutation mutation={PLAY_CARD}>
+              {playCard =>
+                R.reject(R.prop("played"))(data.match.myCards).map(
+                  ({ id: cardId, card }) => (
+                    <Card
+                      onClick={() =>
+                        playCard({ variables: { matchId, cardId } })
+                      }
+                      card={card}
+                    />
+                  )
+                )
+              }
+            </Mutation>
+          </div>
         </div>
       )}
     </div>
@@ -81,6 +112,8 @@ const MatchInner = ({ subscribeToUpdates, data, loading, error }) => {
 };
 
 export default function Match({ match }) {
+  const matchId = match.params.matchId;
+
   React.useEffect(() => {
     // @todo: Join match when entering Match screen (so it's possible to share URL)
   }, []);
@@ -90,16 +123,17 @@ export default function Match({ match }) {
       <Prompt message="Estas seguro que quieres abandonar la partida?" />
       <Query
         query={MATCH_QUERY}
-        variables={{ id: match.params.matchId }}
+        variables={{ id: matchId }}
         fetchPolicy="cache-and-network"
       >
         {({ subscribeToMore, ...result }) => (
           <MatchInner
             {...result}
+            matchId={matchId}
             subscribeToUpdates={() =>
               subscribeToMore({
                 document: MATCH_SUBSCRIPTION,
-                variables: { matchId: match.params.matchId },
+                variables: { matchId },
                 updateQuery: (
                   prev,
                   {
@@ -108,7 +142,6 @@ export default function Match({ match }) {
                     }
                   }
                 ) => {
-                  console.log("prev:", prev);
                   console.log("matchUpdated:", matchUpdated);
                   return { ...prev, match: matchUpdated };
                 }

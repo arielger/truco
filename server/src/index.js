@@ -1,6 +1,3 @@
-const { createServer } = require("http");
-const { SubscriptionServer } = require("subscriptions-transport-ws");
-const { execute, subscribe } = require("graphql");
 const { ApolloServer } = require("apollo-server");
 const jwt = require("jsonwebtoken");
 const typeDefs = require("./schema");
@@ -11,9 +8,19 @@ require("./database");
 
 const MatchAPI = require("./datasources/match");
 const UserAPI = require("./datasources/user");
-const User = require("./database/models/user");
 
 const PORT = 4000;
+
+const verifyToken = token =>
+  new Promise((resolve, reject) => {
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+      if (!err) {
+        resolve({ userId: decoded.id });
+      } else {
+        resolve();
+      }
+    });
+  });
 
 const server = new ApolloServer({
   typeDefs,
@@ -31,15 +38,16 @@ const server = new ApolloServer({
     const token = req.headers.authorization || "";
 
     if (token) {
-      return new Promise((resolve, reject) => {
-        jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-          if (!err) {
-            resolve({ userId: decoded.id });
-          } else {
-            resolve();
-          }
-        });
-      });
+      return verifyToken(token);
+    }
+  },
+  subscriptions: {
+    onConnect: (connectionParams, webSocket) => {
+      if (connectionParams.authorization) {
+        return verifyToken(connectionParams.authorization);
+      }
+
+      throw new Error("Missing 'authorization' parameter");
     }
   }
 });

@@ -20,6 +20,17 @@ const typeDefs = gql`
     ${matchFields}
   }
 
+  type Card {
+    id: ID!,
+    card: String!
+    played: Boolean!
+  }
+
+  type PlayerMatch {
+    myCards: [Card]!
+    ${matchFields}
+  }
+
   enum MatchListUpdateType {
     NEW_MATCH
     UPDATED_MATCH
@@ -33,11 +44,13 @@ const typeDefs = gql`
 
   enum MatchUpdateType {
     NEW_PLAYER
+    START_GAME
     NEW_MOVE
   }
 
   type MatchUpdate {
     type: MatchUpdateType
+    myCards: [Card]!
     ${matchFields}
   }
 
@@ -45,11 +58,12 @@ const typeDefs = gql`
     id: ID!
     name: String!
     avatar: String
+    isFromFirstTeam: Boolean!
   }
 
   type Query {
     matches: [Match]!
-    match(id: ID!): Match
+    match(id: ID!): PlayerMatch
     me: Player!
   }
 
@@ -61,6 +75,7 @@ const typeDefs = gql`
     logInAsGuest(name: String!, avatar: String): LogInResult!
     createMatch(playersCount: Int!, points: Int!): Match!
     joinMatch(matchId: ID!): Match!
+    playCard(matchId: ID!, cardId: ID!): [Card]!
   }
 
   type Subscription {

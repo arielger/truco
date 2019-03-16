@@ -34,9 +34,9 @@ const networkInterface = new HttpLink({
 // Create WebSocket client
 const wsClient = new SubscriptionClient(`ws://localhost:4000/graphql`, {
   reconnect: true,
-  connectionParams: {
-    // Pass any arguments you want for initialization
-  }
+  connectionParams: () => ({
+    authorization: localStorage.getItem("token") || ""
+  })
 });
 
 const webSocketLink = new WebSocketLink(wsClient);

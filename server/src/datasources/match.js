@@ -2,8 +2,56 @@ const R = require("ramda");
 const mongoose = require("mongoose");
 const { DataSource } = require("apollo-datasource");
 const { pubsub, events } = require("../subscriptions");
+const pickRandom = require("pick-random");
+
+const cards = require("../data/cards");
 
 const Match = mongoose.model("Match");
+
+const mapIndexed = R.addIndex(R.map);
+
+const isOdd = R.pipe(
+  R.modulo(R.__, 2),
+  Boolean
+);
+
+const formatMatch = R.evolve({
+  players: R.map(({ data, ...other }) => ({ ...other, ...data }))
+});
+
+const assocPlayerCards = userId => match =>
+  R.assoc(
+    "myCards",
+    R.pipe(
+      R.last,
+      R.propOr([], "cardsByPlayer"),
+      R.find(cardsByPlayer => cardsByPlayer.playerId.equals(userId)),
+      R.propOr([], "cards"),
+      R.map(({ _id, ...cardData }) => ({ ...cardData, id: _id }))
+    )(match.rounds)
+  )(match);
+
+const getNewRoundUpdate = playersIds => {
+  const playersCards = R.pipe(
+    R.map(({ card }) => ({ card, played: false })),
+    R.splitEvery(3)
+  )(pickRandom(cards, { count: playersIds.length * 3 }));
+
+  return {
+    rounds: {
+      moves: [],
+      cardsByPlayer: playersIds.map((playerId, i) => ({
+        playerId,
+        cards: playersCards[i]
+      })),
+      cardsPlayedByPlayer: playersIds.map(playerId => ({
+        playerId,
+        cards: []
+      })),
+      nextPlayer: R.head(playersIds)
+    }
+  };
+};
 
 class MatchAPI extends DataSource {
   constructor() {
@@ -15,34 +63,61 @@ class MatchAPI extends DataSource {
   }
 
   async getAllMatches({ userId }) {
-    const matches = await Match.find({
-      status: "waiting",
-      creator: { $ne: userId }
-    })
-      .populate("creator")
-      .populate("players");
-    return matches.map(m => m.toObject());
+    return R.map(
+      R.pipe(
+        match => match.toObject(),
+        formatMatch
+      )
+    )(
+      await Match.find({
+        status: "waiting",
+        creator: { $ne: userId }
+      })
+        .populate("creator")
+        .populate("players.data")
+    );
   }
 
-  async getMatchById({ matchId }) {
-    const match = await Match.findById(matchId)
-      .populate("creator")
-      .populate("players");
+  async getMatchById({ matchId, userId }) {
+    const match = R.pipe(
+      match => match.toObject(),
+      formatMatch,
+      assocPlayerCards(userId)
+    )(
+      await Match.findById(matchId)
+        .populate("creator")
+        .populate("players.data")
+    );
+
+    // Prevent user from accessing a match not joined
+    if (
+      match.creator.id !== userId &&
+      !R.map(R.prop("id"), match.players).includes(userId)
+    ) {
+      throw new Error("You must join or own the match to access it's data");
+    }
+
     return match;
   }
 
   async createMatch({ playersCount, points, userId }) {
-    const newMatch = await new Match({
+    const matchInput = {
       playersCount,
       points,
       creator: userId,
-      players: [userId]
-    }).save();
+      players: [{ data: userId, isFromFirstTeam: true }]
+    };
+    const newMatch = await new Match(matchInput).save();
 
-    const newMatchData = (await newMatch
-      .populate("creator")
-      .populate("players")
-      .execPopulate()).toObject();
+    const newMatchData = R.pipe(
+      match => match.toObject(),
+      formatMatch
+    )(
+      await newMatch
+        .populate("creator")
+        .populate("players.data")
+        .execPopulate()
+    );
 
     pubsub.publish(events.MATCH_ADDED, {
       matchListUpdated: {
@@ -72,34 +147,152 @@ class MatchAPI extends DataSource {
       throw new Error("You already joined this match");
     }
 
-    const isFull = match.players.length + 1 >= match.playersCount;
+    const playersCount = match.players.length + 1;
+    const startGame = playersCount >= match.playersCount;
+
+    const originalMatch = (await Match.findById(matchId)).toObject();
+
+    const updatedMatch = R.pipe(
+      match => match.toObject(),
+      formatMatch
+    )(
+      await Match.findByIdAndUpdate(
+        matchId,
+        {
+          status: startGame ? "playing" : "waiting",
+          $push: {
+            players: {
+              data: userId,
+              isFromFirstTeam: isOdd(playersCount.length)
+            },
+            ...(startGame
+              ? getNewRoundUpdate([
+                  ...R.map(R.prop("data"), originalMatch.players),
+                  userId
+                ])
+              : {})
+          }
+        },
+        { new: true }
+      )
+        .populate("creator")
+        .populate("players.data")
+    );
+
+    if (startGame) {
+      // Send one event to each player (only show their cards)
+      updatedMatch.players.forEach(player => {
+        const update = {
+          userId: player.id,
+          matchUpdated: {
+            ...assocPlayerCards(player.id)(updatedMatch),
+            type: events.START_GAME
+          }
+        };
+        pubsub.publish(events.START_GAME, update);
+      });
+    } else {
+      pubsub.publish(events.NEW_PLAYER, {
+        matchUpdated: { ...updatedMatch, type: events.NEW_PLAYER }
+      });
+    }
+
+    // If the match is full remove it from the list of matches
+    pubsub.publish(startGame ? events.MATCH_REMOVED : events.MATCH_UPDATED, {
+      matchListUpdated: {
+        type: startGame ? "DELETED_MATCH" : "UPDATED_MATCH",
+        ...updatedMatch
+      }
+    });
+
+    return updatedMatch;
+  }
+
+  async playCard({ matchId, userId, cardId }) {
+    const match = await Match.findById(matchId);
+
+    if (!match) {
+      throw new Error(`There is no match with the id ${matchId}`);
+    }
+
+    if (
+      !R.pipe(
+        R.map(player => player.data.toString()),
+        R.includes(userId)
+      )(match.players)
+    ) {
+      throw new Error(
+        `The user with the id ${userId} hasn't joined the match ${matchId}`
+      );
+    }
+
+    const lastRound = R.last(match.rounds);
+
+    if (!lastRound.nextPlayer.equals(userId)) {
+      throw new Error(`It's not the turn of the player with the id ${userId}`);
+    }
+
+    const cards = R.pipe(
+      R.prop("cardsByPlayer"),
+      R.find(cardsByPlayer => cardsByPlayer.playerId.equals(userId)),
+      R.prop("cards")
+    )(lastRound);
+
+    const selectedCardIndex = R.findIndex(card => card._id.equals(cardId))(
+      cards
+    );
+    const selectedCard = cards[selectedCardIndex];
+
+    if (!selectedCard) {
+      throw new Error(
+        `There is no card with the id ${cardId} or it has already been played`
+      );
+    }
+
+    if (selectedCard.played) {
+      throw new Error(`The card with the id ${cardId} has already been played`);
+    }
+
+    const lastRoundIndex = match.rounds.length - 1;
+    const playerIndex = R.findIndex(({ data }) => data.equals(userId))(
+      match.players
+    );
+    const nextPlayerId = R.pipe(
+      R.inc,
+      R.modulo(R.__, match.playersCount),
+      nextPlayerIndex => match.players[nextPlayerIndex].data
+    )(playerIndex);
 
     const updatedMatch = await Match.findByIdAndUpdate(
       matchId,
       {
-        $push: { players: userId },
-        ...(isFull ? { status: "playing" } : {})
+        $push: {
+          [`rounds.${lastRoundIndex}.cardsPlayedByPlayer.${playerIndex}.cards`]: {
+            id: cardId,
+            card: selectedCard.card
+          }
+        },
+        $set: {
+          [`rounds.${lastRoundIndex}.nextPlayer`]: nextPlayerId,
+          [`rounds.${lastRoundIndex}.cardsByPlayer.${playerIndex}.cards.${selectedCardIndex}.played`]: true
+        }
       },
-      { new: true }
-    )
-      .populate("creator")
-      .populate("players");
-
-    const updatedMatchData = updatedMatch.toObject();
-
-    pubsub.publish(events.NEW_PLAYER, {
-      matchUpdated: { ...updatedMatchData, type: "NEW_PLAYER" }
-    });
-
-    // If the match is full remove it from the list of matches
-    pubsub.publish(isFull ? events.MATCH_REMOVED : events.MATCH_UPDATED, {
-      matchListUpdated: {
-        type: isFull ? "DELETED_MATCH" : "UPDATED_MATCH",
-        ...updatedMatchData
+      {
+        new: true
       }
-    });
+    );
 
-    return updatedMatchData;
+    return [
+      {
+        card: "TEST_CARD",
+        played: true
+      },
+      {
+        card: "TEST_CARD",
+        played: true
+      }
+    ];
+    // @todo: Send new move notification with updated match to every user
   }
 }
 

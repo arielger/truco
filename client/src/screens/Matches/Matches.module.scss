@@ -13,14 +13,14 @@
   padding: 0;
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, 260px);
   grid-column-gap: 16px;
 }
 
 .match {
   background-color: #2d3039;
   border-radius: 6px;
-  padding: 8px 24px;
+  padding: 24px;
   margin-bottom: 16px;
   cursor: pointer;
   display: flex;
