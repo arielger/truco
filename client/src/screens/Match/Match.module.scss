@@ -1,3 +1,7 @@
+.match {
+  flex-grow: 1;
+}
+
 .waiting-container {
   display: flex;
   flex-direction: column;
@@ -17,6 +21,7 @@
   margin: 0 16px;
 }
 
-.cards {
-  display: flex;
+.match-inner {
+  position: relative;
+  height: 100%;
 }

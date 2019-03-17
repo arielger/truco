@@ -1,4 +1,5 @@
 import React, { Fragment } from "react";
+import * as R from "ramda";
 import { ApolloProvider, Query } from "react-apollo";
 import { ApolloClient } from "apollo-client";
 import { InMemoryCache } from "apollo-cache-inmemory";
@@ -14,6 +15,7 @@ import ReactModal from "react-modal";
 
 import { Login, Matches, Match } from "./screens";
 import Header from "./components/Header";
+import styles from "./App.module.scss";
 
 ReactModal.setAppElement("#root");
 
@@ -76,6 +78,16 @@ const IS_LOGGED_IN = gql`
   }
 `;
 
+const FETCH_PROFILE = gql`
+  {
+    me {
+      id
+      avatar
+      name
+    }
+  }
+`;
+
 const App = () => {
   return (
     <div id="main">
@@ -85,13 +97,27 @@ const App = () => {
             <Fragment>
               <BrowserRouter>
                 {isLoggedIn ? (
-                  <div>
-                    <Header client={client} />
-                    <Switch>
-                      <Route path="/matches" component={Matches} />
-                      <Route path="/match/:matchId" component={Match} />
-                      <Redirect to="/matches" />
-                    </Switch>
+                  <div className={styles["layout"]}>
+                    <Query query={FETCH_PROFILE}>
+                      {({ data, loading, error }) => {
+                        const user = R.prop("me", data);
+                        return (
+                          <>
+                            <Header client={client} user={user} />
+                            <Switch>
+                              <Route path="/matches" component={Matches} />
+                              <Route
+                                path="/match/:matchId"
+                                render={({ ...props }) => (
+                                  <Match user={user} {...props} />
+                                )}
+                              />
+                              <Redirect to="/matches" />
+                            </Switch>
+                          </>
+                        );
+                      }}
+                    </Query>
                   </div>
                 ) : (
                   <Switch>

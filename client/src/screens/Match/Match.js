@@ -1,11 +1,11 @@
-import React from "react";
+import React, { Fragment } from "react";
 import * as R from "ramda";
 import { Query, Mutation } from "react-apollo";
 import { Prompt } from "react-router-dom";
 import gql from "graphql-tag";
 
 import styles from "./Match.module.scss";
-import Card from "../../components/Card";
+import PlayerCards from "./PlayerCards";
 
 const matchFields = `
   status
@@ -25,6 +25,11 @@ const matchFields = `
     card
     played
   }
+  cardsPlayedByPlayer {
+    playerId
+    cards
+  }
+  nextPlayer
 `;
 
 const MATCH_QUERY = gql`
@@ -47,13 +52,27 @@ const MATCH_SUBSCRIPTION = gql`
 const PLAY_CARD = gql`
   mutation playCard($matchId: ID!, $cardId: ID!) {
     playCard(matchId: $matchId, cardId: $cardId) {
-      card
-      played
+      myCards {
+        id
+        card
+        played
+      }
+      cardsPlayedByPlayer {
+        playerId
+        cards
+      }
     }
   }
 `;
 
-const MatchInner = ({ matchId, subscribeToUpdates, data, loading, error }) => {
+const MatchInner = ({
+  user,
+  matchId,
+  subscribeToUpdates,
+  data,
+  loading,
+  error
+}) => {
   React.useEffect(() => {
     const unsubscribe = subscribeToUpdates();
     return () => {
@@ -64,8 +83,16 @@ const MatchInner = ({ matchId, subscribeToUpdates, data, loading, error }) => {
   if (loading) return <span>Loading</span>;
   if (error) return <span>Error</span>;
 
+  const notPlayedCards = R.reject(R.prop("played"), data.match.myCards);
+  const playedCards = R.pipe(
+    R.find(R.propEq("playerId", user.id)),
+    R.prop("cards")
+  )(data.match.cardsPlayedByPlayer);
+
+  const otherPlayers = R.reject(R.propEq("id", user.id), data.match.players);
+
   return (
-    <div>
+    <div className={styles["match-inner"]}>
       {data.match.status === "waiting" && (
         <div className={styles["waiting-container"]}>
           <h1>Partida de {data.match.creator.name}</h1>
@@ -88,30 +115,37 @@ const MatchInner = ({ matchId, subscribeToUpdates, data, loading, error }) => {
         </div>
       )}
       {data.match.status === "playing" && (
-        <div>
-          <div className={styles["cards"]}>
-            <Mutation mutation={PLAY_CARD}>
-              {playCard =>
-                R.reject(R.prop("played"))(data.match.myCards).map(
-                  ({ id: cardId, card }) => (
-                    <Card
-                      onClick={() =>
-                        playCard({ variables: { matchId, cardId } })
-                      }
-                      card={card}
-                    />
-                  )
-                )
-              }
-            </Mutation>
-          </div>
-        </div>
+        <Fragment>
+          {otherPlayers.map(player => (
+            <PlayerCards
+              position="top" //@todo: Refactor to handle 4 and 6 players
+              playedCards={R.pipe(
+                R.find(R.propEq("playerId", player.id)),
+                R.prop("cards")
+              )(data.match.cardsPlayedByPlayer)}
+            />
+          ))}
+          <Mutation mutation={PLAY_CARD}>
+            {playCard => (
+              <PlayerCards
+                position="bottom"
+                isCurrentUser={true}
+                isYourTurn={data.match.nextPlayer === user.id}
+                playedCards={playedCards}
+                notPlayedCards={notPlayedCards}
+                handlePlayCard={cardId =>
+                  playCard({ variables: { matchId, cardId } })
+                }
+              />
+            )}
+          </Mutation>
+        </Fragment>
       )}
     </div>
   );
 };
 
-export default function Match({ match }) {
+export default function Match({ user, match }) {
   const matchId = match.params.matchId;
 
   React.useEffect(() => {
@@ -119,7 +153,7 @@ export default function Match({ match }) {
   }, []);
 
   return (
-    <div>
+    <div className={styles["match"]}>
       <Prompt message="Estas seguro que quieres abandonar la partida?" />
       <Query
         query={MATCH_QUERY}
@@ -129,6 +163,7 @@ export default function Match({ match }) {
         {({ subscribeToMore, ...result }) => (
           <MatchInner
             {...result}
+            user={user}
             matchId={matchId}
             subscribeToUpdates={() =>
               subscribeToMore({
@@ -141,10 +176,7 @@ export default function Match({ match }) {
                       data: { matchUpdated }
                     }
                   }
-                ) => {
-                  console.log("matchUpdated:", matchUpdated);
-                  return { ...prev, match: matchUpdated };
-                }
+                ) => ({ ...prev, match: matchUpdated })
               })
             }
           />

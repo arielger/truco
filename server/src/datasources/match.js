@@ -8,8 +8,6 @@ const cards = require("../data/cards");
 
 const Match = mongoose.model("Match");
 
-const mapIndexed = R.addIndex(R.map);
-
 const isOdd = R.pipe(
   R.modulo(R.__, 2),
   Boolean
@@ -19,7 +17,7 @@ const formatMatch = R.evolve({
   players: R.map(({ data, ...other }) => ({ ...other, ...data }))
 });
 
-const assocPlayerCards = userId => match =>
+const assocCurrentPlayerCards = userId => match =>
   R.assoc(
     "myCards",
     R.pipe(
@@ -28,6 +26,28 @@ const assocPlayerCards = userId => match =>
       R.find(cardsByPlayer => cardsByPlayer.playerId.equals(userId)),
       R.propOr([], "cards"),
       R.map(({ _id, ...cardData }) => ({ ...cardData, id: _id }))
+    )(match.rounds)
+  )(match);
+
+const assocCardsPlayedByPlayers = match =>
+  R.assoc(
+    "cardsPlayedByPlayer",
+    R.pipe(
+      R.last,
+      R.propOr([], "cardsPlayedByPlayer"),
+      R.map(({ playerId, cards }) => ({
+        playerId,
+        cards: R.map(R.prop("card"))(cards)
+      }))
+    )(match.rounds)
+  )(match);
+
+const assocNextPlayer = match =>
+  R.assoc(
+    "nextPlayer",
+    R.pipe(
+      R.last,
+      R.prop("nextPlayer")
     )(match.rounds)
   )(match);
 
@@ -82,7 +102,9 @@ class MatchAPI extends DataSource {
     const match = R.pipe(
       match => match.toObject(),
       formatMatch,
-      assocPlayerCards(userId)
+      assocCurrentPlayerCards(userId),
+      assocCardsPlayedByPlayers,
+      assocNextPlayer
     )(
       await Match.findById(matchId)
         .populate("creator")
@@ -154,7 +176,9 @@ class MatchAPI extends DataSource {
 
     const updatedMatch = R.pipe(
       match => match.toObject(),
-      formatMatch
+      formatMatch,
+      assocCardsPlayedByPlayers,
+      assocNextPlayer
     )(
       await Match.findByIdAndUpdate(
         matchId,
@@ -185,7 +209,7 @@ class MatchAPI extends DataSource {
         const update = {
           userId: player.id,
           matchUpdated: {
-            ...assocPlayerCards(player.id)(updatedMatch),
+            ...assocCurrentPlayerCards(player.id)(updatedMatch),
             type: events.START_GAME
           }
         };
@@ -263,36 +287,45 @@ class MatchAPI extends DataSource {
       nextPlayerIndex => match.players[nextPlayerIndex].data
     )(playerIndex);
 
-    const updatedMatch = await Match.findByIdAndUpdate(
-      matchId,
-      {
-        $push: {
-          [`rounds.${lastRoundIndex}.cardsPlayedByPlayer.${playerIndex}.cards`]: {
-            id: cardId,
-            card: selectedCard.card
+    const updatedMatch = R.pipe(
+      match => match.toObject(),
+      formatMatch,
+      assocCardsPlayedByPlayers,
+      assocNextPlayer
+    )(
+      await Match.findByIdAndUpdate(
+        matchId,
+        {
+          $push: {
+            [`rounds.${lastRoundIndex}.cardsPlayedByPlayer.${playerIndex}.cards`]: {
+              id: cardId,
+              card: selectedCard.card
+            }
+          },
+          $set: {
+            [`rounds.${lastRoundIndex}.nextPlayer`]: nextPlayerId,
+            [`rounds.${lastRoundIndex}.cardsByPlayer.${playerIndex}.cards.${selectedCardIndex}.played`]: true
           }
         },
-        $set: {
-          [`rounds.${lastRoundIndex}.nextPlayer`]: nextPlayerId,
-          [`rounds.${lastRoundIndex}.cardsByPlayer.${playerIndex}.cards.${selectedCardIndex}.played`]: true
+        {
+          new: true
         }
-      },
-      {
-        new: true
-      }
+      )
+        .populate("creator")
+        .populate("players.data")
     );
 
-    return [
-      {
-        card: "TEST_CARD",
-        played: true
-      },
-      {
-        card: "TEST_CARD",
-        played: true
-      }
-    ];
-    // @todo: Send new move notification with updated match to every user
+    updatedMatch.players.forEach(player => {
+      pubsub.publish(events.NEW_MOVE, {
+        userId: player.id,
+        matchUpdated: {
+          ...assocCurrentPlayerCards(player.id)(updatedMatch),
+          type: events.NEW_MOVE
+        }
+      });
+    });
+
+    return assocCurrentPlayerCards(userId)(updatedMatch);
   }
 }
 

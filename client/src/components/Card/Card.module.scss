@@ -1,8 +1,11 @@
 .card {
-  width: 208px;
-  height: 319px;
   background-color: white;
-  border-radius: 16px;
+  border-radius: 12px;
   background-image: url("./cards.png");
+  background-size: 1404px;
   margin: 0 12px;
+
+  &.disabled {
+    opacity: 0.5;
+  }
 }

@@ -21,13 +21,20 @@ const typeDefs = gql`
   }
 
   type Card {
-    id: ID!,
+    id: ID!
     card: String!
     played: Boolean!
   }
 
+  type cardsByPlayer {
+    playerId: ID!
+    cards: [String]
+  }
+
   type PlayerMatch {
-    myCards: [Card]!
+    myCards: [Card!]!
+    nextPlayer: ID
+    cardsPlayedByPlayer: [cardsByPlayer!]!
     ${matchFields}
   }
 
@@ -51,6 +58,8 @@ const typeDefs = gql`
   type MatchUpdate {
     type: MatchUpdateType
     myCards: [Card]!
+    nextPlayer: ID
+    cardsPlayedByPlayer: [cardsByPlayer]
     ${matchFields}
   }
 
@@ -75,7 +84,7 @@ const typeDefs = gql`
     logInAsGuest(name: String!, avatar: String): LogInResult!
     createMatch(playersCount: Int!, points: Int!): Match!
     joinMatch(matchId: ID!): Match!
-    playCard(matchId: ID!, cardId: ID!): [Card]!
+    playCard(matchId: ID!, cardId: ID!): PlayerMatch!
   }
 
   type Subscription {

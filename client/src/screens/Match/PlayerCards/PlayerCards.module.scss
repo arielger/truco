@@ -1,0 +1,34 @@
+.playerCards {
+  display: flex;
+  position: absolute;
+
+  &.bottom {
+    flex-direction: column;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+
+    .notPlayedCards {
+      margin-top: 16px;
+    }
+  }
+
+  &.top {
+    flex-direction: column-reverse;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+
+    .notPlayedCards {
+      margin-bottom: 16px;
+    }
+  }
+}
+
+.notPlayedCards {
+  display: flex;
+}
+
+.playedCards {
+  display: flex;
+}
