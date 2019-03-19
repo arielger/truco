@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const shortid = require("shortid");
 const mongooseHidden = require("mongoose-hidden")();
-const cards = require("../../data/cards");
+const { cards } = require("../../utils/cards");
 
 const cardValidator = {
   validator: card => cards.includes(card),
@@ -9,6 +9,29 @@ const cardValidator = {
 };
 
 const roundSchema = new mongoose.Schema({
+  winner: {
+    type: String,
+    enum: ["first", "second"]
+  },
+  hands: {
+    type: [
+      {
+        winnerTeam: {
+          type: String,
+          enum: ["first", "second", "tie"],
+          required: true
+        },
+        initialPlayerIndex: {
+          type: Number,
+          required: true
+        }
+      }
+    ],
+    validate: {
+      validator: val => val.length <= 3,
+      message: props => `${props.value} length is greater than 3`
+    }
+  },
   moves: [
     {
       user: {

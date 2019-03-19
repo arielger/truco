@@ -4,7 +4,8 @@ const { DataSource } = require("apollo-datasource");
 const { pubsub, events } = require("../subscriptions");
 const pickRandom = require("pick-random");
 
-const cards = require("../data/cards");
+const { cards, getHandTeamWinner } = require("../utils/cards");
+const getRoundWinnerTeam = require("../utils/round");
 
 const Match = mongoose.model("Match");
 
@@ -68,6 +69,11 @@ const getNewRoundUpdate = playersIds => {
         playerId,
         cards: []
       })),
+      hands: [
+        {
+          initialPlayerIndex: 0
+        }
+      ],
       nextPlayer: R.head(playersIds)
     }
   };
@@ -277,15 +283,47 @@ class MatchAPI extends DataSource {
       throw new Error(`The card with the id ${cardId} has already been played`);
     }
 
-    const lastRoundIndex = match.rounds.length - 1;
-    const playerIndex = R.findIndex(({ data }) => data.equals(userId))(
-      match.players
-    );
-    const nextPlayerId = R.pipe(
-      R.inc,
-      R.modulo(R.__, match.playersCount),
-      nextPlayerIndex => match.players[nextPlayerIndex].data
-    )(playerIndex);
+    const currentRoundIndex = match.rounds.length - 1;
+    const currentRound = R.last(match.rounds);
+    const currentHandIndex = currentRound.hands.length - 1;
+    const currentHand = R.last(currentRound.hands);
+
+    const playersIds = R.map(player => player.data.toString(), match.players);
+    const playerIndex = R.findIndex(R.equals(userId))(playersIds);
+
+    const lastPlayerIndex =
+      currentHand.initialPlayerIndex - 1 < 0
+        ? match.playersCount - 1
+        : currentHand.initialPlayerIndex - 1;
+    const lastPlayerId = playersIds[lastPlayerIndex];
+    const isLastPlayerOfHand = userId === lastPlayerId;
+    const { handWinnerTeam, handStarterPlayerIndex } =
+      isLastPlayerOfHand &&
+      getHandTeamWinner(
+        R.pipe(
+          R.map(R.path(["cards", currentHandIndex, "card"])),
+          R.map(R.when(R.isNil, R.always(selectedCard.card)))
+        )(currentRound.cardsPlayedByPlayer)
+      );
+
+    const nextPlayerIndex =
+      R.type(handStarterPlayerIndex) === "Number"
+        ? handStarterPlayerIndex
+        : R.pipe(
+            R.inc,
+            R.modulo(R.__, match.playersCount)
+          )(playerIndex);
+
+    const nextPlayerId = match.players[nextPlayerIndex].data;
+
+    const handsWinnerTeam =
+      isLastPlayerOfHand &&
+      R.pipe(
+        R.map(R.prop("winnerTeam")),
+        R.filter(Boolean),
+        R.append(handWinnerTeam)
+      )(currentRound.hands);
+    const roundWinnerTeam = getRoundWinnerTeam(handsWinnerTeam);
 
     const updatedMatch = R.pipe(
       match => match.toObject(),
@@ -296,15 +334,25 @@ class MatchAPI extends DataSource {
       await Match.findByIdAndUpdate(
         matchId,
         {
+          $set: {
+            [`rounds.${currentRoundIndex}.nextPlayer`]: nextPlayerId,
+            [`rounds.${currentRoundIndex}.cardsByPlayer.${playerIndex}.cards.${selectedCardIndex}.played`]: true,
+            [`rounds.${currentRoundIndex}.winner`]: roundWinnerTeam || null,
+            ...(isLastPlayerOfHand
+              ? {
+                  [`rounds.${currentRoundIndex}.hands.${currentHandIndex}.winnerTeam`]: handWinnerTeam,
+                  [`rounds.${currentRoundIndex}.hands.${currentHandIndex +
+                    1}`]: {
+                    initialPlayerIndex: nextPlayerIndex
+                  }
+                }
+              : {})
+          },
           $push: {
-            [`rounds.${lastRoundIndex}.cardsPlayedByPlayer.${playerIndex}.cards`]: {
+            [`rounds.${currentRoundIndex}.cardsPlayedByPlayer.${playerIndex}.cards`]: {
               id: cardId,
               card: selectedCard.card
             }
-          },
-          $set: {
-            [`rounds.${lastRoundIndex}.nextPlayer`]: nextPlayerId,
-            [`rounds.${lastRoundIndex}.cardsByPlayer.${playerIndex}.cards.${selectedCardIndex}.played`]: true
           }
         },
         {
