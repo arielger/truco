@@ -285,6 +285,11 @@ class MatchAPI extends DataSource {
 
     const currentRoundIndex = match.rounds.length - 1;
     const currentRound = R.last(match.rounds);
+
+    if (currentRound.winner) {
+      throw new Error("There is already a winner for the current round");
+    }
+
     const currentHandIndex = currentRound.hands.length - 1;
     const currentHand = R.last(currentRound.hands);
 
@@ -338,16 +343,20 @@ class MatchAPI extends DataSource {
             [`rounds.${currentRoundIndex}.nextPlayer`]: nextPlayerId,
             [`rounds.${currentRoundIndex}.cardsByPlayer.${playerIndex}.cards.${selectedCardIndex}.played`]: true,
             [`rounds.${currentRoundIndex}.winner`]: roundWinnerTeam || null,
-            ...(isLastPlayerOfHand
-              ? {
-                  [`rounds.${currentRoundIndex}.hands.${currentHandIndex}.winnerTeam`]: handWinnerTeam,
-                  [`rounds.${currentRoundIndex}.hands.${currentHandIndex +
-                    1}`]: {
-                    initialPlayerIndex: nextPlayerIndex
-                  }
-                }
-              : {})
+            ...(isLastPlayerOfHand && {
+              [`rounds.${currentRoundIndex}.hands.${currentHandIndex}.winnerTeam`]: handWinnerTeam,
+              [`rounds.${currentRoundIndex}.hands.${currentHandIndex + 1}`]: {
+                initialPlayerIndex: nextPlayerIndex
+              }
+            })
           },
+          ...(roundWinnerTeam && {
+            $inc: {
+              [roundWinnerTeam === "first"
+                ? "pointsFirstTeam"
+                : "pointsSecondTeam"]: 1
+            }
+          }),
           $push: {
             [`rounds.${currentRoundIndex}.cardsPlayedByPlayer.${playerIndex}.cards`]: {
               id: cardId,
