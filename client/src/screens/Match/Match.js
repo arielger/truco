@@ -6,6 +6,7 @@ import gql from "graphql-tag";
 
 import styles from "./Match.module.scss";
 import PlayerCards from "./PlayerCards";
+import Scores from "./Scores";
 
 const matchFields = `
   status
@@ -30,6 +31,9 @@ const matchFields = `
     cards
   }
   nextPlayer
+  myPoints
+  theirPoints
+  roundWinnerTeam
 `;
 
 const MATCH_QUERY = gql`
@@ -116,6 +120,11 @@ const MatchInner = ({
       )}
       {data.match.status === "playing" && (
         <Fragment>
+          <Scores
+            matchPoints={data.match.points}
+            myPoints={data.match.myPoints}
+            theirPoints={data.match.theirPoints}
+          />
           {otherPlayers.map(player => (
             <PlayerCards
               position="top" //@todo: Refactor to handle 4 and 6 players
@@ -130,7 +139,10 @@ const MatchInner = ({
               <PlayerCards
                 position="bottom"
                 isCurrentUser={true}
-                isYourTurn={data.match.nextPlayer === user.id}
+                enablePlayCards={
+                  !data.match.roundWinnerTeam &&
+                  data.match.nextPlayer === user.id
+                }
                 playedCards={playedCards}
                 notPlayedCards={notPlayedCards}
                 handlePlayCard={cardId =>

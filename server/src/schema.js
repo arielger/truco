@@ -9,6 +9,15 @@ const matchFields = `
   players: [Player]!
 `;
 
+const playerMatchFields = `
+  myCards: [Card!]!
+  nextPlayer: ID
+  cardsPlayedByPlayer: [cardsByPlayer!]!
+  roundWinnerTeam: ID
+  myPoints: Int
+  theirPoints: Int
+`;
+
 const typeDefs = gql`
   enum MatchStatus {
     waiting
@@ -32,10 +41,8 @@ const typeDefs = gql`
   }
 
   type PlayerMatch {
-    myCards: [Card!]!
-    nextPlayer: ID
-    cardsPlayedByPlayer: [cardsByPlayer!]!
     ${matchFields}
+    ${playerMatchFields}
   }
 
   enum MatchListUpdateType {
@@ -57,10 +64,8 @@ const typeDefs = gql`
 
   type MatchUpdate {
     type: MatchUpdateType
-    myCards: [Card]!
-    nextPlayer: ID
-    cardsPlayedByPlayer: [cardsByPlayer]
     ${matchFields}
+    ${playerMatchFields}
   }
 
   type Player {

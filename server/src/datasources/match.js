@@ -52,6 +52,33 @@ const assocNextPlayer = match =>
     )(match.rounds)
   )(match);
 
+const assocPoints = userId => match => {
+  const { players, pointsFirstTeam, pointsSecondTeam } = match;
+  const isUserFromFirstTeam = R.pipe(
+    R.find(R.propEq("id", userId)),
+    R.prop("isFromFirstTeam")
+  )(players);
+  return R.pipe(
+    R.assoc(
+      "myPoints",
+      isUserFromFirstTeam ? pointsFirstTeam : pointsSecondTeam
+    ),
+    R.assoc(
+      "theirPoints",
+      isUserFromFirstTeam ? pointsSecondTeam : pointsFirstTeam
+    )
+  )(match);
+};
+
+const assocWinnerTeam = match =>
+  R.assoc(
+    "roundWinnerTeam",
+    R.pipe(
+      R.last,
+      R.prop("winner")
+    )(match.rounds)
+  )(match);
+
 const getNewRoundUpdate = playersIds => {
   const playersCards = R.pipe(
     R.map(({ card }) => ({ card, played: false })),
@@ -110,7 +137,9 @@ class MatchAPI extends DataSource {
       formatMatch,
       assocCurrentPlayerCards(userId),
       assocCardsPlayedByPlayers,
-      assocNextPlayer
+      assocNextPlayer,
+      assocPoints(userId),
+      assocWinnerTeam
     )(
       await Match.findById(matchId)
         .populate("creator")
@@ -215,7 +244,10 @@ class MatchAPI extends DataSource {
         const update = {
           userId: player.id,
           matchUpdated: {
-            ...assocCurrentPlayerCards(player.id)(updatedMatch),
+            ...R.pipe(
+              assocCurrentPlayerCards(player.id),
+              assocPoints(player.id)
+            )(updatedMatch),
             type: events.START_GAME
           }
         };
@@ -334,7 +366,8 @@ class MatchAPI extends DataSource {
       match => match.toObject(),
       formatMatch,
       assocCardsPlayedByPlayers,
-      assocNextPlayer
+      assocNextPlayer,
+      assocWinnerTeam
     )(
       await Match.findByIdAndUpdate(
         matchId,
@@ -376,13 +409,19 @@ class MatchAPI extends DataSource {
       pubsub.publish(events.NEW_MOVE, {
         userId: player.id,
         matchUpdated: {
-          ...assocCurrentPlayerCards(player.id)(updatedMatch),
+          ...R.pipe(
+            assocCurrentPlayerCards(player.id),
+            assocPoints(player.id)
+          )(updatedMatch),
           type: events.NEW_MOVE
         }
       });
     });
 
-    return assocCurrentPlayerCards(userId)(updatedMatch);
+    return R.pipe(
+      assocCurrentPlayerCards(userId),
+      assocPoints(userId)
+    )(updatedMatch);
   }
 }
 

@@ -8,7 +8,7 @@ import styles from "./PlayerCards.module.scss";
 export default function PlayerCards({
   position, // top, right, bottom, left
   playedCards,
-  isYourTurn,
+  enablePlayCards,
   isCurrentUser,
   notPlayedCards,
   handlePlayCard
@@ -34,9 +34,9 @@ export default function PlayerCards({
           ? notPlayedCards.map(({ id, card }) => (
               <Card
                 key={card}
-                isDisabled={!isYourTurn}
+                isDisabled={!enablePlayCards}
                 card={card}
-                onClick={() => isYourTurn && handlePlayCard(id)}
+                onClick={() => enablePlayCards && handlePlayCard(id)}
               />
             ))
           : R.times(
