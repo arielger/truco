@@ -66,7 +66,8 @@ module.exports = {
           pubsub.asyncIterator([
             events.NEW_PLAYER,
             events.START_GAME,
-            events.NEW_MOVE
+            events.NEW_MOVE,
+            events.NEW_ROUND
           ]),
         (payload, variables, context) => {
           const isSubscribedToMatch =

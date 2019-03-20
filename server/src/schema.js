@@ -60,6 +60,7 @@ const typeDefs = gql`
     NEW_PLAYER
     START_GAME
     NEW_MOVE
+    NEW_ROUND
   }
 
   type MatchUpdate {

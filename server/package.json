@@ -15,6 +15,7 @@
   "dependencies": {
     "apollo-datasource": "^0.3.1",
     "apollo-server": "^2.4.6",
+    "delay": "^4.1.0",
     "dotenv": "^6.2.0",
     "dotenv-safe": "^6.1.0",
     "graphql": "^14.1.1",

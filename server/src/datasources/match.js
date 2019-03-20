@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const { DataSource } = require("apollo-datasource");
 const { pubsub, events } = require("../subscriptions");
 const pickRandom = require("pick-random");
+const delay = require("delay");
 
 const { cards, getHandTeamWinner } = require("../utils/cards");
 const getRoundWinnerTeam = require("../utils/round");
@@ -417,6 +418,48 @@ class MatchAPI extends DataSource {
         }
       });
     });
+
+    // If round is finished add new round and send update after a delay
+    if (roundWinnerTeam) {
+      (async () => {
+        await delay(5000);
+
+        const newRoundMatch = R.pipe(
+          match => match.toObject(),
+          formatMatch,
+          assocCardsPlayedByPlayers,
+          assocNextPlayer,
+          assocWinnerTeam
+        )(
+          await Match.findByIdAndUpdate(
+            matchId,
+            {
+              $push: getNewRoundUpdate(
+                R.map(R.prop("id"), updatedMatch.players)
+              )
+            },
+            {
+              new: true
+            }
+          )
+            .populate("creator")
+            .populate("players.data")
+        );
+
+        newRoundMatch.players.forEach(player => {
+          pubsub.publish(events.NEW_ROUND, {
+            userId: player.id,
+            matchUpdated: {
+              ...R.pipe(
+                assocCurrentPlayerCards(player.id),
+                assocPoints(player.id)
+              )(newRoundMatch),
+              type: events.NEW_ROUND
+            }
+          });
+        });
+      })();
+    }
 
     return R.pipe(
       assocCurrentPlayerCards(userId),
