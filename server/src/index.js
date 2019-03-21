@@ -9,7 +9,7 @@ require("./database");
 const MatchAPI = require("./datasources/match");
 const UserAPI = require("./datasources/user");
 
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 
 const verifyToken = token =>
   new Promise((resolve, reject) => {
