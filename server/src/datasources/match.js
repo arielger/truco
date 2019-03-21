@@ -71,14 +71,37 @@ const assocPoints = userId => match => {
   )(match);
 };
 
-const assocWinnerTeam = match =>
-  R.assoc(
+const assocRoundWinnerTeam = userId => match => {
+  const { players } = match;
+  const userTeam = R.pipe(
+    R.find(R.propEq("id", userId)),
+    R.prop("isFromFirstTeam"),
+    isFromFirstTeam => (isFromFirstTeam ? "first" : "second")
+  )(players);
+  const roundWinnerTeam = R.pipe(
+    R.last,
+    R.prop("winner")
+  )(match.rounds);
+
+  return R.assoc(
     "roundWinnerTeam",
-    R.pipe(
-      R.last,
-      R.prop("winner")
-    )(match.rounds)
+    roundWinnerTeam ? (userTeam === roundWinnerTeam ? "we" : "them") : null
   )(match);
+};
+
+const assocMatchWinnerTeam = userId => match => {
+  const { players } = match;
+  const userTeam = R.pipe(
+    R.find(R.propEq("id", userId)),
+    R.prop("isFromFirstTeam"),
+    isFromFirstTeam => (isFromFirstTeam ? "first" : "second")
+  )(players);
+
+  return R.assoc(
+    "matchWinnerTeam",
+    match.winnerTeam ? (userTeam === match.winnerTeam ? "we" : "them") : null
+  )(match);
+};
 
 const getNewRoundUpdate = playersIds => {
   const playersCards = R.pipe(
@@ -140,7 +163,7 @@ class MatchAPI extends DataSource {
       assocCardsPlayedByPlayers,
       assocNextPlayer,
       assocPoints(userId),
-      assocWinnerTeam
+      assocRoundWinnerTeam(userId)
     )(
       await Match.findById(matchId)
         .populate("creator")
@@ -153,6 +176,10 @@ class MatchAPI extends DataSource {
       !R.map(R.prop("id"), match.players).includes(userId)
     ) {
       throw new Error("You must join or own the match to access it's data");
+    }
+
+    if (match.winnerTeam) {
+      throw new Error("This match is already finished");
     }
 
     return match;
@@ -278,6 +305,10 @@ class MatchAPI extends DataSource {
       throw new Error(`There is no match with the id ${matchId}`);
     }
 
+    if (match.winnerTeam) {
+      throw new Error(`The match with the id ${matchId} is already finished`);
+    }
+
     if (
       !R.pipe(
         R.map(player => player.data.toString()),
@@ -363,12 +394,22 @@ class MatchAPI extends DataSource {
       )(currentRound.hands);
     const roundWinnerTeam = getRoundWinnerTeam(handsWinnerTeam);
 
+    // @todo: Refactor score count to handle envido and truco
+    const matchWinner =
+      roundWinnerTeam &&
+      (roundWinnerTeam === "first" &&
+        match.pointsFirstTeam + 30 >= match.points)
+        ? "first"
+        : roundWinnerTeam === "second" &&
+          match.pointsSecondTeam + 30 >= match.points
+        ? "second"
+        : false;
+
     const updatedMatch = R.pipe(
       match => match.toObject(),
       formatMatch,
       assocCardsPlayedByPlayers,
-      assocNextPlayer,
-      assocWinnerTeam
+      assocNextPlayer
     )(
       await Match.findByIdAndUpdate(
         matchId,
@@ -382,13 +423,17 @@ class MatchAPI extends DataSource {
               [`rounds.${currentRoundIndex}.hands.${currentHandIndex + 1}`]: {
                 initialPlayerIndex: nextPlayerIndex
               }
+            }),
+            ...(matchWinner && {
+              winnerTeam: matchWinner
             })
           },
           ...(roundWinnerTeam && {
             $inc: {
+              //@todo: Replace +5 with real round points
               [roundWinnerTeam === "first"
                 ? "pointsFirstTeam"
-                : "pointsSecondTeam"]: 1
+                : "pointsSecondTeam"]: 5
             }
           }),
           $push: {
@@ -412,15 +457,19 @@ class MatchAPI extends DataSource {
         matchUpdated: {
           ...R.pipe(
             assocCurrentPlayerCards(player.id),
-            assocPoints(player.id)
+            assocPoints(player.id),
+            assocRoundWinnerTeam(player.id),
+            assocMatchWinnerTeam(player.id)
           )(updatedMatch),
           type: events.NEW_MOVE
         }
       });
     });
 
-    // If round is finished add new round and send update after a delay
-    if (roundWinnerTeam) {
+    // @todo => Send new round in same update and handle delay in front-end
+    // If round is finished and match is not finished
+    // add new round and send update after a delay
+    if (roundWinnerTeam && !matchWinner) {
       (async () => {
         await delay(5000);
 
@@ -428,8 +477,7 @@ class MatchAPI extends DataSource {
           match => match.toObject(),
           formatMatch,
           assocCardsPlayedByPlayers,
-          assocNextPlayer,
-          assocWinnerTeam
+          assocNextPlayer
         )(
           await Match.findByIdAndUpdate(
             matchId,
@@ -452,7 +500,8 @@ class MatchAPI extends DataSource {
             matchUpdated: {
               ...R.pipe(
                 assocCurrentPlayerCards(player.id),
-                assocPoints(player.id)
+                assocPoints(player.id),
+                assocRoundWinnerTeam(player.id)
               )(newRoundMatch),
               type: events.NEW_ROUND
             }
@@ -463,7 +512,9 @@ class MatchAPI extends DataSource {
 
     return R.pipe(
       assocCurrentPlayerCards(userId),
-      assocPoints(userId)
+      assocPoints(userId),
+      assocRoundWinnerTeam(userId),
+      assocMatchWinnerTeam(userId)
     )(updatedMatch);
   }
 }

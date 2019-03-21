@@ -13,7 +13,8 @@ const playerMatchFields = `
   myCards: [Card!]!
   nextPlayer: ID
   cardsPlayedByPlayer: [cardsByPlayer!]!
-  roundWinnerTeam: ID
+  roundWinnerTeam: Winner
+  matchWinnerTeam: Winner
   myPoints: Int
   theirPoints: Int
 `;
@@ -23,6 +24,11 @@ const typeDefs = gql`
     waiting
     playing
     finished
+  }
+
+  enum Winner {
+    we
+    them
   }
 
   type Match {

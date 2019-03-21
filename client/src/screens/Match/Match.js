@@ -3,6 +3,7 @@ import * as R from "ramda";
 import { Query, Mutation } from "react-apollo";
 import { Prompt } from "react-router-dom";
 import gql from "graphql-tag";
+import Modal from "react-modal";
 
 import styles from "./Match.module.scss";
 import PlayerCards from "./PlayerCards";
@@ -34,6 +35,7 @@ const matchFields = `
   myPoints
   theirPoints
   roundWinnerTeam
+  matchWinnerTeam
 `;
 
 const MATCH_QUERY = gql`
@@ -73,6 +75,7 @@ const MatchInner = ({
   user,
   matchId,
   subscribeToUpdates,
+  history,
   data,
   loading,
   error
@@ -151,13 +154,25 @@ const MatchInner = ({
               />
             )}
           </Mutation>
+          <Modal
+            isOpen={data.match.matchWinnerTeam}
+            onRequestClose={() => {
+              history.replace("/matches");
+            }}
+          >
+            <h2>
+              {data.match.matchWinnerTeam === "we"
+                ? "Has ganado"
+                : "Has perdido"}
+            </h2>
+          </Modal>
         </Fragment>
       )}
     </div>
   );
 };
 
-export default function Match({ user, match }) {
+export default function Match({ history, user, match }) {
   const matchId = match.params.matchId;
 
   React.useEffect(() => {
@@ -177,6 +192,7 @@ export default function Match({ user, match }) {
             {...result}
             user={user}
             matchId={matchId}
+            history={history}
             subscribeToUpdates={() =>
               subscribeToMore({
                 document: MATCH_SUBSCRIPTION,

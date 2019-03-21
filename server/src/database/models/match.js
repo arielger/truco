@@ -166,6 +166,10 @@ const matchSchema = new mongoose.Schema({
       message: props => `${props.value} is not a valid points number`
     },
     default: 0
+  },
+  winnerTeam: {
+    type: String,
+    enum: ["first", "second"]
   }
 });
 
