@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 require("./models/match");
 require("./models/user");
 
-mongoose.connect("mongodb://127.0.0.1/truco");
+mongoose.connect(process.env.MONGODB_CONNECTION_URI);
 
 const db = mongoose.connection;
 
