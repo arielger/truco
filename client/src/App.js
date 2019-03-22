@@ -30,16 +30,19 @@ const authLink = setContext((_, { headers = {} }) => {
 });
 
 const networkInterface = new HttpLink({
-  uri: "http://localhost:4000"
+  uri: process.env.REACT_APP_API_URL
 });
 
 // Create WebSocket client
-const wsClient = new SubscriptionClient(`ws://localhost:4000/graphql`, {
-  reconnect: true,
-  connectionParams: () => ({
-    authorization: localStorage.getItem("token") || ""
-  })
-});
+const wsClient = new SubscriptionClient(
+  process.env.REACT_APP_SUBSCRIPTIONS_URL,
+  {
+    reconnect: true,
+    connectionParams: () => ({
+      authorization: localStorage.getItem("token") || ""
+    })
+  }
+);
 
 const webSocketLink = new WebSocketLink(wsClient);
 
