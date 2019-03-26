@@ -2,11 +2,16 @@ const R = require("ramda");
 const mongoose = require("mongoose");
 const { DataSource } = require("apollo-datasource");
 const { pubsub, events } = require("../subscriptions");
-const pickRandom = require("pick-random");
 const delay = require("delay");
 
-const { cards, getHandTeamWinner } = require("../utils/cards");
-const getRoundWinnerTeam = require("../utils/round");
+const { getHandTeamWinner } = require("../utils/cards");
+const {
+  getNewRoundData,
+  getRoundWinnerTeam,
+  getMatchWinnerTeam,
+  isValidTrucoAction,
+  getRoundTrucoPoints
+} = require("../utils/round");
 
 const Match = mongoose.model("Match");
 
@@ -101,33 +106,6 @@ const assocMatchWinnerTeam = userId => match => {
     "matchWinnerTeam",
     match.winnerTeam ? (userTeam === match.winnerTeam ? "we" : "them") : null
   )(match);
-};
-
-const getNewRoundUpdate = playersIds => {
-  const playersCards = R.pipe(
-    R.map(({ card }) => ({ card, played: false })),
-    R.splitEvery(3)
-  )(pickRandom(cards, { count: playersIds.length * 3 }));
-
-  return {
-    rounds: {
-      moves: [],
-      cardsByPlayer: playersIds.map((playerId, i) => ({
-        playerId,
-        cards: playersCards[i]
-      })),
-      cardsPlayedByPlayer: playersIds.map(playerId => ({
-        playerId,
-        cards: []
-      })),
-      hands: [
-        {
-          initialPlayerIndex: 0
-        }
-      ],
-      nextPlayer: R.head(playersIds)
-    }
-  };
 };
 
 class MatchAPI extends DataSource {
@@ -253,10 +231,12 @@ class MatchAPI extends DataSource {
               isFromFirstTeam: isOdd(playersCount.length)
             },
             ...(startGame
-              ? getNewRoundUpdate([
-                  ...R.map(R.prop("data"), originalMatch.players),
-                  userId
-                ])
+              ? {
+                  rounds: getNewRoundData([
+                    ...R.map(R.prop("data"), originalMatch.players),
+                    userId
+                  ])
+                }
               : {})
           }
         },
@@ -320,9 +300,9 @@ class MatchAPI extends DataSource {
       );
     }
 
-    const lastRound = R.last(match.rounds);
+    const currentRound = R.last(match.rounds);
 
-    if (!lastRound.nextPlayer.equals(userId)) {
+    if (!currentRound.nextPlayer.equals(userId)) {
       throw new Error(`It's not the turn of the player with the id ${userId}`);
     }
 
@@ -330,7 +310,7 @@ class MatchAPI extends DataSource {
       R.prop("cardsByPlayer"),
       R.find(cardsByPlayer => cardsByPlayer.playerId.equals(userId)),
       R.prop("cards")
-    )(lastRound);
+    )(currentRound);
 
     const selectedCardIndex = R.findIndex(card => card._id.equals(cardId))(
       cards
@@ -348,10 +328,18 @@ class MatchAPI extends DataSource {
     }
 
     const currentRoundIndex = match.rounds.length - 1;
-    const currentRound = R.last(match.rounds);
 
     if (currentRound.winner) {
       throw new Error("There is already a winner for the current round");
+    }
+
+    if (
+      R.pipe(
+        R.path(["truco", "status"]),
+        R.equals("PENDING")
+      )(currentRound)
+    ) {
+      throw new Error("Can't play card if truco answer is pending");
     }
 
     const currentHandIndex = currentRound.hands.length - 1;
@@ -394,16 +382,11 @@ class MatchAPI extends DataSource {
       )(currentRound.hands);
     const roundWinnerTeam = getRoundWinnerTeam(handsWinnerTeam);
 
-    // @todo: Refactor score count to handle envido and truco
+    const roundTrucoPoints = getRoundTrucoPoints(currentRound);
+
     const matchWinner =
       roundWinnerTeam &&
-      (roundWinnerTeam === "first" &&
-        match.pointsFirstTeam + 30 >= match.points)
-        ? "first"
-        : roundWinnerTeam === "second" &&
-          match.pointsSecondTeam + 30 >= match.points
-        ? "second"
-        : false;
+      getMatchWinnerTeam(match, roundWinnerTeam, roundTrucoPoints);
 
     const updatedMatch = R.pipe(
       match => match.toObject(),
@@ -430,10 +413,9 @@ class MatchAPI extends DataSource {
           },
           ...(roundWinnerTeam && {
             $inc: {
-              //@todo: Replace +5 with real round points
               [roundWinnerTeam === "first"
                 ? "pointsFirstTeam"
-                : "pointsSecondTeam"]: 5
+                : "pointsSecondTeam"]: roundTrucoPoints
             }
           }),
           $push: {
@@ -482,9 +464,11 @@ class MatchAPI extends DataSource {
           await Match.findByIdAndUpdate(
             matchId,
             {
-              $push: getNewRoundUpdate(
-                R.map(R.prop("id"), updatedMatch.players)
-              )
+              $push: {
+                rounds: getNewRoundData(
+                  R.map(R.prop("id"), updatedMatch.players)
+                )
+              }
             },
             {
               new: true
@@ -516,6 +500,133 @@ class MatchAPI extends DataSource {
       assocRoundWinnerTeam(userId),
       assocMatchWinnerTeam(userId)
     )(updatedMatch);
+  }
+
+  async playTruco({ matchId, userId, action }) {
+    const match = await Match.findById(matchId);
+
+    // @todo: Move validations to generic function (DRY code)
+    if (!match) {
+      throw new Error(`There is no match with the id ${matchId}`);
+    }
+
+    if (match.winnerTeam) {
+      throw new Error(`The match with the id ${matchId} is already finished`);
+    }
+
+    if (
+      !R.pipe(
+        R.map(player => player.data.toString()),
+        R.includes(userId)
+      )(match.players)
+    ) {
+      throw new Error(
+        `The user with the id ${userId} hasn't joined the match ${matchId}`
+      );
+    }
+
+    const currentRound = R.last(match.rounds);
+    const currentRoundIndex = match.rounds.length - 1;
+    const roundTruco = R.prop("truco")(currentRound);
+
+    // Check if it's initial "truco" or if it's responding to truco from the other team
+    const isAnswering = R.pipe(
+      R.prop("status"),
+      R.equals("PENDING")
+    )(roundTruco);
+
+    const isFromFirstTeam = R.pipe(
+      R.find(player => player.data.equals(userId)),
+      R.prop("isFromFirstTeam")
+    )(match.players);
+
+    if (!isAnswering && !currentRound.nextPlayer.equals(userId)) {
+      throw new Error(`It's not the turn of the player with the id ${userId}`);
+    }
+
+    // Check that player answering is from the correct team
+    if (
+      isAnswering &&
+      R.prop("isFromFirstTeam", roundTruco) === isFromFirstTeam
+    ) {
+      throw new Error(`It's time for the other team to respond`);
+    }
+
+    if (!isValidTrucoAction({ action, roundTruco })) {
+      throw new Error(`The action ${action} is not valid.`);
+    }
+
+    const trucoRejected = action === "REJECT";
+
+    const roundTrucoPoints =
+      trucoRejected && getRoundTrucoPoints(currentRound) - 1;
+
+    const matchWinner =
+      trucoRejected &&
+      getMatchWinnerTeam(
+        match,
+        isFromFirstTeam ? "second" : "first",
+        roundTrucoPoints
+      );
+
+    const newType = R.cond([
+      [
+        R.anyPass([
+          R.equals("TRUCO"),
+          R.equals("RETRUCO"),
+          R.equals("VALE_CUATRO")
+        ]),
+        R.always(action)
+      ],
+      [R.T, R.always(roundTruco.type)]
+    ])(action);
+
+    const newStatus = R.cond([
+      [R.equals("ACCEPT"), R.always("ACCEPTED")],
+      [R.equals("REJECT"), R.always("REJECTED")],
+      [R.T, R.always("PENDING")]
+    ])(action);
+
+    await Match.findByIdAndUpdate(matchId, {
+      $set: {
+        [`rounds.${currentRoundIndex}.truco`]: {
+          type: newType,
+          status: newStatus,
+          isFromFirstTeam
+        },
+        ...(trucoRejected
+          ? {
+              [`rounds.${currentRoundIndex}.winner`]: isFromFirstTeam
+                ? "second"
+                : "first"
+            }
+          : {}),
+        ...(trucoRejected && !matchWinner
+          ? {
+              [`rounds.${currentRoundIndex + 1}`]: getNewRoundData(
+                R.map(R.prop("data"), match.players)
+              )
+            }
+          : {}),
+        ...(matchWinner && {
+          winnerTeam: matchWinner
+        })
+      },
+      ...(trucoRejected && {
+        $inc: {
+          [isFromFirstTeam
+            ? "pointsSecondTeam"
+            : "pointsFirstTeam"]: roundTrucoPoints
+        }
+      })
+    });
+
+    // @todo: Send update to all players
+
+    return {
+      success: true,
+      message: "Match updated successfully"
+    };
   }
 }
 

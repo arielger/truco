@@ -96,6 +96,22 @@ const roundSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true
+  },
+  truco: {
+    type: {
+      type: String,
+      enum: ["TRUCO", "RETRUCO", "VALE_CUATRO"],
+      required: true
+    },
+    status: {
+      type: String,
+      enum: ["ACCEPTED", "REJECTED", "PENDING"],
+      required: true
+    },
+    isFromFirstTeam: {
+      type: Boolean,
+      required: true
+    }
   }
 });
 
@@ -144,7 +160,8 @@ const matchSchema = new mongoose.Schema({
       },
       isFromFirstTeam: {
         type: Boolean,
-        default: false
+        default: false,
+        required: true
       }
     }
   ],

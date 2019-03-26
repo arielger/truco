@@ -71,6 +71,15 @@ const PLAY_CARD = gql`
   }
 `;
 
+const PLAY_TRUCO = gql`
+  mutation playTruco($matchId: ID!, $action: TrucoActions!) {
+    playTruco(matchId: $matchId, action: $action) {
+      success
+      message
+    }
+  }
+`;
+
 const MatchInner = ({
   user,
   matchId,
@@ -128,6 +137,27 @@ const MatchInner = ({
             myPoints={data.match.myPoints}
             theirPoints={data.match.theirPoints}
           />
+          <Mutation mutation={PLAY_TRUCO}>
+            {playTruco => (
+              <div
+                style={{ display: "flex", flexDirection: "column", width: 200 }}
+              >
+                {["TRUCO", "RETRUCO", "VALE_CUATRO", "ACCEPT", "REJECT"].map(
+                  action => (
+                    <button
+                      onClick={() =>
+                        playTruco({
+                          variables: { matchId, action }
+                        })
+                      }
+                    >
+                      {action}
+                    </button>
+                  )
+                )}
+              </div>
+            )}
+          </Mutation>
           {otherPlayers.map(player => (
             <PlayerCards
               position="top" //@todo: Refactor to handle 4 and 6 players
@@ -155,7 +185,7 @@ const MatchInner = ({
             )}
           </Mutation>
           <Modal
-            isOpen={data.match.matchWinnerTeam}
+            isOpen={!!data.match.matchWinnerTeam}
             onRequestClose={() => {
               history.replace("/matches");
             }}

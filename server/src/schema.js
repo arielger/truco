@@ -92,11 +92,26 @@ const typeDefs = gql`
     token: String
   }
 
+  enum TrucoActions {
+    TRUCO
+    RETRUCO
+    VALE_CUATRO
+    ACCEPT
+    REJECT
+  }
+
+  type MatchUpdateResponse {
+    success: Boolean!
+    message: String
+  }
+
+  # @todo: playCard should return MatchUpdatResponse instead of full match
   type Mutation {
     logInAsGuest(name: String!, avatar: String): LogInResult!
     createMatch(playersCount: Int!, points: Int!): Match!
     joinMatch(matchId: ID!): Match!
     playCard(matchId: ID!, cardId: ID!): PlayerMatch!
+    playTruco(matchId: ID!, action: TrucoActions!): MatchUpdateResponse! 
   }
 
   type Subscription {

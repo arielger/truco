@@ -49,6 +49,12 @@ module.exports = {
         throw new Error("You must be logged in to play a card");
       }
       return dataSources.matchAPI.playCard({ matchId, userId, cardId });
+    },
+    playTruco: (parent, { matchId, action }, { userId, dataSources }) => {
+      if (!userId) {
+        throw new Error("You must be logged in to send truco action");
+      }
+      return dataSources.matchAPI.playTruco({ matchId, userId, action });
     }
   },
   Subscription: {
