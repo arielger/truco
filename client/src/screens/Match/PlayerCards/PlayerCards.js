@@ -15,35 +15,23 @@ export default function PlayerCards({
 }) {
   return (
     <div
-      className={cs(styles.playerCards, {
-        [styles[position]]: true
+      className={cs(styles.cards, {
+        [styles[position]]: true,
+        [styles.disabled]: !enablePlayCards
       })}
     >
-      <div className={styles.playedCards}>
-        {playedCards.map(card => (
-          <Card key={card} card={card} />
-        ))}
-        {Array(3 - playedCards.length)
-          .fill(undefined)
-          .map((_, i) => (
-            <Card key={i} isPlaceholder={true} />
-          ))}
-      </div>
-      <div className={styles.notPlayedCards}>
-        {isCurrentUser
-          ? notPlayedCards.map(({ id, card }) => (
-              <Card
-                key={card}
-                isDisabled={!enablePlayCards}
-                card={card}
-                onClick={() => enablePlayCards && handlePlayCard(id)}
-              />
-            ))
-          : R.times(
-              i => <Card key={i} isHidden={true} />,
-              3 - playedCards.length
-            )}
-      </div>
+      {isCurrentUser
+        ? notPlayedCards.map(({ id, card }) => (
+            <Card
+              key={card}
+              card={card}
+              onClick={() => enablePlayCards && handlePlayCard(id)}
+            />
+          ))
+        : R.times(
+            i => <Card key={i} isHidden={true} />,
+            3 - playedCards.length
+          )}
     </div>
   );
 }

@@ -20,7 +20,8 @@ export default function Card({
   isHidden,
   isDisabled,
   card,
-  onClick
+  onClick = () => {},
+  style
 }) {
   if (isHidden || isPlaceholder) {
     return (
@@ -36,11 +37,12 @@ export default function Card({
             : {}),
           ...(isPlaceholder
             ? {
-                border: "1px dashed white",
+                border: "1px dashed rgba(255,255,255,0.2)",
                 background: "none",
                 width: cardSize.width - 2
               }
-            : {})
+            : {}),
+          ...style
         }}
       />
     );
@@ -62,7 +64,8 @@ export default function Card({
           ? `${-1 * cardSize.width}px ${-4 * cardSize.height}px`
           : `${(cardNumber - 1) * -cardSize.width}px ${-stepCardYOffset[
               cardStep
-            ] * cardSize.height}px`
+            ] * cardSize.height}px`,
+        ...style
       }}
     />
   );

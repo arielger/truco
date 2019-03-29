@@ -6,7 +6,9 @@ import gql from "graphql-tag";
 import Modal from "react-modal";
 
 import styles from "./Match.module.scss";
+
 import PlayerCards from "./PlayerCards";
+import PlayedCards from "./PlayedCards";
 import Scores from "./Scores";
 
 const trucoActions = ["TRUCO", "RETRUCO", "VALE_CUATRO"];
@@ -117,63 +119,66 @@ const MatchInner = ({
   const notPlayedCards = R.reject(R.prop("played"), data.match.myCards);
   const playedCards = R.pipe(
     R.find(R.propEq("playerId", user.id)),
-    R.prop("cards")
+    R.prop("cards"),
+    R.defaultTo([])
   )(data.match.cardsPlayedByPlayer);
 
   const currentHand = playedCards.length + 1;
 
   const otherPlayers = R.reject(R.propEq("id", user.id), data.match.players);
 
-  const trucoAvailableActions = R.cond([
-    [
-      R.pipe(
-        // Don't show any action if...
-        R.anyPass([
-          // it's not your turn and you are not answering
-          R.both(
-            R.always(data.match.nextPlayer !== user.id),
-            ({ status }) => status !== "PENDING"
-          ),
-          // are waiting for response of the other team
-          R.both(R.propEq("status", "PENDING"), R.propEq("team", "we")),
-          // the other team accepted truco the last time
-          R.both(R.propEq("status", "ACCEPTED"), R.propEq("team", "them")),
-          // you accepted truco in the same hand (prevent saying truco + action in sequence)
-          R.allPass([
-            R.propEq("status", "ACCEPTED"),
-            R.propEq("team", "we"),
-            R.propEq("hand", currentHand)
+  const trucoAvailableActions =
+    data.match.status === "playing" &&
+    R.cond([
+      [
+        R.pipe(
+          // Don't show any action if...
+          R.anyPass([
+            // it's not your turn and you are not answering
+            R.both(
+              R.always(data.match.nextPlayer !== user.id),
+              ({ status }) => status !== "PENDING"
+            ),
+            // are waiting for response of the other team
+            R.both(R.propEq("status", "PENDING"), R.propEq("team", "we")),
+            // the other team accepted truco the last time
+            R.both(R.propEq("status", "ACCEPTED"), R.propEq("team", "them")),
+            // you accepted truco in the same hand (prevent saying truco + action in sequence)
+            R.allPass([
+              R.propEq("status", "ACCEPTED"),
+              R.propEq("team", "we"),
+              R.propEq("hand", currentHand)
+            ])
           ])
-        ])
-      ),
-      R.always([])
-    ],
-    // If is answering show accept, reject and next type
-    [
-      R.propEq("status", "PENDING"),
-      R.pipe(
-        R.prop("type"),
-        type => (type ? [nextPossibleAction(type)] : []),
-        R.filter(Boolean),
-        R.concat(["ACCEPT", "REJECT"])
-      )
-    ],
-    // Otherwise, show only next type
-    [
-      R.T,
-      R.pipe(
-        R.prop("type"),
-        nextPossibleAction,
-        R.of,
-        R.filter(Boolean)
-      )
-    ]
-  ])({
-    type: R.path(["truco", "type"])(data.match),
-    status: R.path(["truco", "status"])(data.match),
-    team: R.path(["truco", "team"])(data.match),
-    hand: R.path(["truco", "hand"])(data.match)
-  });
+        ),
+        R.always([])
+      ],
+      // If is answering show accept, reject and next type
+      [
+        R.propEq("status", "PENDING"),
+        R.pipe(
+          R.prop("type"),
+          type => (type ? [nextPossibleAction(type)] : []),
+          R.filter(Boolean),
+          R.concat(["ACCEPT", "REJECT"])
+        )
+      ],
+      // Otherwise, show only next type
+      [
+        R.T,
+        R.pipe(
+          R.prop("type"),
+          nextPossibleAction,
+          R.of,
+          R.filter(Boolean)
+        )
+      ]
+    ])({
+      type: R.path(["truco", "type"])(data.match),
+      status: R.path(["truco", "status"])(data.match),
+      team: R.path(["truco", "team"])(data.match),
+      hand: R.path(["truco", "hand"])(data.match)
+    });
 
   return (
     <div className={styles["match-inner"]}>
@@ -201,6 +206,7 @@ const MatchInner = ({
       {data.match.status === "playing" && (
         <Fragment>
           <Scores
+            moreThanTwoPlayers={data.match.players.length > 2}
             matchPoints={data.match.points}
             myPoints={data.match.myPoints}
             theirPoints={data.match.theirPoints}
@@ -208,10 +214,15 @@ const MatchInner = ({
           <Mutation mutation={PLAY_TRUCO}>
             {playTruco => (
               <div
-                style={{ display: "flex", flexDirection: "column", width: 200 }}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  width: 200
+                }}
               >
                 {trucoAvailableActions.map(action => (
                   <button
+                    key={action}
                     disabled={!data.match.nextPlayer === user.id}
                     onClick={() =>
                       playTruco({
@@ -225,12 +236,17 @@ const MatchInner = ({
               </div>
             )}
           </Mutation>
+          <PlayedCards
+            cardsPlayedByPlayer={data.match.cardsPlayedByPlayer}
+            userId={user.id}
+          />
           {otherPlayers.map(player => (
             <PlayerCards
+              key={player.id}
               position="top" //@todo: Refactor to handle 4 and 6 players
               playedCards={R.pipe(
                 R.find(R.propEq("playerId", player.id)),
-                R.prop("cards")
+                R.propOr("cards")
               )(data.match.cardsPlayedByPlayer)}
             />
           ))}
