@@ -108,6 +108,26 @@ const assocMatchWinnerTeam = userId => match => {
   )(match);
 };
 
+const assocTrucoStatus = userId => match => {
+  const { players } = match;
+  const isFromFirstTeam = R.pipe(
+    R.find(R.propEq("id", userId)),
+    R.prop("isFromFirstTeam")
+  )(players);
+  const lastRound = R.last(match.rounds);
+  const truco = R.prop("truco", lastRound);
+
+  const result = R.when(
+    R.always(truco),
+    R.assoc("truco", {
+      ...truco,
+      team: R.prop("isFromFirstTeam", truco) === isFromFirstTeam ? "we" : "them"
+    })
+  )(match);
+
+  return result;
+};
+
 class MatchAPI extends DataSource {
   constructor() {
     super();
@@ -141,7 +161,8 @@ class MatchAPI extends DataSource {
       assocCardsPlayedByPlayers,
       assocNextPlayer,
       assocPoints(userId),
-      assocRoundWinnerTeam(userId)
+      assocRoundWinnerTeam(userId),
+      assocTrucoStatus(userId)
     )(
       await Match.findById(matchId)
         .populate("creator")
@@ -441,7 +462,8 @@ class MatchAPI extends DataSource {
             assocCurrentPlayerCards(player.id),
             assocPoints(player.id),
             assocRoundWinnerTeam(player.id),
-            assocMatchWinnerTeam(player.id)
+            assocMatchWinnerTeam(player.id),
+            assocTrucoStatus(player.id)
           )(updatedMatch),
           type: events.NEW_MOVE
         }
@@ -587,41 +609,74 @@ class MatchAPI extends DataSource {
       [R.T, R.always("PENDING")]
     ])(action);
 
-    await Match.findByIdAndUpdate(matchId, {
-      $set: {
-        [`rounds.${currentRoundIndex}.truco`]: {
-          type: newType,
-          status: newStatus,
-          isFromFirstTeam
-        },
-        ...(trucoRejected
-          ? {
-              [`rounds.${currentRoundIndex}.winner`]: isFromFirstTeam
-                ? "second"
-                : "first"
-            }
-          : {}),
-        ...(trucoRejected && !matchWinner
-          ? {
-              [`rounds.${currentRoundIndex + 1}`]: getNewRoundData(
-                R.map(R.prop("data"), match.players)
-              )
-            }
-          : {}),
-        ...(matchWinner && {
-          winnerTeam: matchWinner
-        })
-      },
-      ...(trucoRejected && {
-        $inc: {
-          [isFromFirstTeam
-            ? "pointsSecondTeam"
-            : "pointsFirstTeam"]: roundTrucoPoints
-        }
-      })
-    });
+    // @todo -> Add new player index if game is finished
 
-    // @todo: Send update to all players
+    const updatedMatch = R.pipe(
+      match => match.toObject(),
+      formatMatch,
+      assocCardsPlayedByPlayers,
+      assocNextPlayer
+    )(
+      await Match.findByIdAndUpdate(
+        matchId,
+        {
+          $set: {
+            [`rounds.${currentRoundIndex}.truco`]: {
+              type: newType,
+              status: newStatus,
+              isFromFirstTeam,
+              hand: R.pipe(
+                R.prop("hands"),
+                R.length
+              )(currentRound)
+            },
+            ...(trucoRejected
+              ? {
+                  [`rounds.${currentRoundIndex}.winner`]: isFromFirstTeam
+                    ? "second"
+                    : "first"
+                }
+              : {}),
+            ...(trucoRejected && !matchWinner
+              ? {
+                  [`rounds.${currentRoundIndex + 1}`]: getNewRoundData(
+                    R.map(R.prop("data"), match.players)
+                  )
+                }
+              : {}),
+            ...(matchWinner && {
+              winnerTeam: matchWinner
+            })
+          },
+          ...(trucoRejected && {
+            $inc: {
+              [isFromFirstTeam
+                ? "pointsSecondTeam"
+                : "pointsFirstTeam"]: roundTrucoPoints
+            }
+          })
+        },
+        { new: true }
+      )
+        .populate("creator")
+        .populate("players.data")
+    );
+
+    updatedMatch.players.forEach(player => {
+      const result = {
+        userId: player.id,
+        matchUpdated: {
+          ...R.pipe(
+            assocCurrentPlayerCards(player.id),
+            assocPoints(player.id),
+            assocRoundWinnerTeam(player.id),
+            assocTrucoStatus(player.id)
+          )(updatedMatch),
+          type: events.TRUCO_ACTION
+        }
+      };
+      pubsub.publish(events.TRUCO_ACTION, result);
+    });
 
     return {
       success: true,

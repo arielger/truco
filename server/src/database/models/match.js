@@ -111,6 +111,10 @@ const roundSchema = new mongoose.Schema({
     isFromFirstTeam: {
       type: Boolean,
       required: true
+    },
+    hand: {
+      type: Number,
+      required: true
     }
   }
 });

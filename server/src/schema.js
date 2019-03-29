@@ -9,16 +9,6 @@ const matchFields = `
   players: [Player]!
 `;
 
-const playerMatchFields = `
-  myCards: [Card!]!
-  nextPlayer: ID
-  cardsPlayedByPlayer: [cardsByPlayer!]!
-  roundWinnerTeam: Winner
-  matchWinnerTeam: Winner
-  myPoints: Int
-  theirPoints: Int
-`;
-
 const typeDefs = gql`
   enum MatchStatus {
     waiting
@@ -26,9 +16,28 @@ const typeDefs = gql`
     finished
   }
 
-  enum Winner {
+  enum Team {
     we
     them
+  }
+
+  enum TrucoType {
+    TRUCO
+    RETRUCO
+    VALE_CUATRO
+  }
+
+  enum TrucoStatus {
+    PENDING
+    ACCEPTED
+    REJECTED
+  }
+
+  type Truco {
+    type: TrucoType!
+    status: TrucoStatus!
+    team: Team!
+    hand: Int!
   }
 
   type Match {
@@ -48,7 +57,14 @@ const typeDefs = gql`
 
   type PlayerMatch {
     ${matchFields}
-    ${playerMatchFields}
+    myCards: [Card!]!
+    nextPlayer: ID
+    cardsPlayedByPlayer: [cardsByPlayer!]!
+    roundWinnerTeam: Team
+    matchWinnerTeam: Team
+    myPoints: Int
+    theirPoints: Int
+    truco: Truco
   }
 
   enum MatchListUpdateType {
@@ -67,12 +83,20 @@ const typeDefs = gql`
     START_GAME
     NEW_MOVE
     NEW_ROUND
+    TRUCO_ACTION
   }
 
   type MatchUpdate {
     type: MatchUpdateType
     ${matchFields}
-    ${playerMatchFields}
+    myCards: [Card!]
+    nextPlayer: ID
+    cardsPlayedByPlayer: [cardsByPlayer!]
+    roundWinnerTeam: Team
+    matchWinnerTeam: Team
+    myPoints: Int
+    theirPoints: Int
+    truco: Truco
   }
 
   type Player {

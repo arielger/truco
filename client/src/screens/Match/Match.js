@@ -9,6 +9,15 @@ import styles from "./Match.module.scss";
 import PlayerCards from "./PlayerCards";
 import Scores from "./Scores";
 
+const trucoActions = ["TRUCO", "RETRUCO", "VALE_CUATRO"];
+
+const nextPossibleAction = action =>
+  R.pipe(
+    act => R.findIndex(R.equals(act), trucoActions),
+    R.inc,
+    actionIndex => trucoActions[actionIndex]
+  )(action);
+
 const matchFields = `
   status
   playersCount
@@ -36,6 +45,12 @@ const matchFields = `
   theirPoints
   roundWinnerTeam
   matchWinnerTeam
+  truco {
+    type
+    status
+    team
+    hand
+  }
 `;
 
 const MATCH_QUERY = gql`
@@ -105,7 +120,60 @@ const MatchInner = ({
     R.prop("cards")
   )(data.match.cardsPlayedByPlayer);
 
+  const currentHand = playedCards.length + 1;
+
   const otherPlayers = R.reject(R.propEq("id", user.id), data.match.players);
+
+  const trucoAvailableActions = R.cond([
+    [
+      R.pipe(
+        // Don't show any action if...
+        R.anyPass([
+          // it's not your turn and you are not answering
+          R.both(
+            R.always(data.match.nextPlayer !== user.id),
+            ({ status }) => status !== "PENDING"
+          ),
+          // are waiting for response of the other team
+          R.both(R.propEq("status", "PENDING"), R.propEq("team", "we")),
+          // the other team accepted truco the last time
+          R.both(R.propEq("status", "ACCEPTED"), R.propEq("team", "them")),
+          // you accepted truco in the same hand (prevent saying truco + action in sequence)
+          R.allPass([
+            R.propEq("status", "ACCEPTED"),
+            R.propEq("team", "we"),
+            R.propEq("hand", currentHand)
+          ])
+        ])
+      ),
+      R.always([])
+    ],
+    // If is answering show accept, reject and next type
+    [
+      R.propEq("status", "PENDING"),
+      R.pipe(
+        R.prop("type"),
+        type => (type ? [nextPossibleAction(type)] : []),
+        R.filter(Boolean),
+        R.concat(["ACCEPT", "REJECT"])
+      )
+    ],
+    // Otherwise, show only next type
+    [
+      R.T,
+      R.pipe(
+        R.prop("type"),
+        nextPossibleAction,
+        R.of,
+        R.filter(Boolean)
+      )
+    ]
+  ])({
+    type: R.path(["truco", "type"])(data.match),
+    status: R.path(["truco", "status"])(data.match),
+    team: R.path(["truco", "team"])(data.match),
+    hand: R.path(["truco", "hand"])(data.match)
+  });
 
   return (
     <div className={styles["match-inner"]}>
@@ -142,19 +210,18 @@ const MatchInner = ({
               <div
                 style={{ display: "flex", flexDirection: "column", width: 200 }}
               >
-                {["TRUCO", "RETRUCO", "VALE_CUATRO", "ACCEPT", "REJECT"].map(
-                  action => (
-                    <button
-                      onClick={() =>
-                        playTruco({
-                          variables: { matchId, action }
-                        })
-                      }
-                    >
-                      {action}
-                    </button>
-                  )
-                )}
+                {trucoAvailableActions.map(action => (
+                  <button
+                    disabled={!data.match.nextPlayer === user.id}
+                    onClick={() =>
+                      playTruco({
+                        variables: { matchId, action }
+                      })
+                    }
+                  >
+                    {action}
+                  </button>
+                ))}
               </div>
             )}
           </Mutation>
@@ -234,7 +301,10 @@ export default function Match({ history, user, match }) {
                       data: { matchUpdated }
                     }
                   }
-                ) => ({ ...prev, match: matchUpdated })
+                ) => {
+                  console.log("matchUpdated:", matchUpdated);
+                  return { ...prev, match: matchUpdated };
+                }
               })
             }
           />

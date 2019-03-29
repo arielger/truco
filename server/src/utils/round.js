@@ -73,7 +73,7 @@ const isValidTrucoAction = ({ action, roundTruco }) => {
       ])
     ]),
     R.allPass([
-      R.always(!currentStatus, currentStatus === "ACCEPTED"),
+      R.always(!currentStatus || currentStatus === "ACCEPTED"),
       R.equals(nextPossibleAction)
     ])
   ])(action);

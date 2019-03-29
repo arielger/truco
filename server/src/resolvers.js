@@ -73,7 +73,8 @@ module.exports = {
             events.NEW_PLAYER,
             events.START_GAME,
             events.NEW_MOVE,
-            events.NEW_ROUND
+            events.NEW_ROUND,
+            events.TRUCO_ACTION
           ]),
         (payload, variables, context) => {
           const isSubscribedToMatch =

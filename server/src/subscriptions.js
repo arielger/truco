@@ -10,6 +10,7 @@ module.exports = {
     NEW_PLAYER: "NEW_PLAYER",
     START_GAME: "START_GAME",
     NEW_MOVE: "NEW_MOVE",
+    TRUCO_ACTION: "TRUCO_ACTION",
     NEW_ROUND: "NEW_ROUND"
   }
 };
