@@ -1,12 +1,13 @@
 import React from "react";
 import * as R from "ramda";
-import { withApollo, Query, Mutation } from "react-apollo";
+import { withApollo, Query } from "react-apollo";
+import { Link } from "react-router-dom";
 import gql from "graphql-tag";
 import NewMatch from "../NewMatch";
 import styles from "./Matches.module.scss";
 
 const MATCHES_QUERY = gql`
-  {
+  query matchesQuery {
     matches {
       id
       playersCount
@@ -38,14 +39,6 @@ const MATCHES_SUBSCRIPTION = gql`
         name
         avatar
       }
-    }
-  }
-`;
-
-const JOIN_MATCH = gql`
-  mutation joinMatch($matchId: ID!) {
-    joinMatch(matchId: $matchId) {
-      id
     }
   }
 `;
@@ -138,49 +131,37 @@ const MatchesList = ({ history, subscribeToUpdates, data, loading, error }) => {
   return (
     <ul className={styles["matches"]}>
       {data.matches.map(match => (
-        <Mutation
+        <Link
+          to={`/match/${match.id}`}
+          className={styles["match"]}
           key={match.id}
-          mutation={JOIN_MATCH}
-          onCompleted={({ joinMatch: { id } }) => {
-            history.push(`/match/${id}`);
-          }}
         >
-          {(joinMatch, { data, loading, error }) => (
-            <div
-              onClick={() => {
-                joinMatch({ variables: { matchId: match.id } });
-              }}
-              className={styles["match"]}
-              key={match.id}
-            >
-              <img
-                className={styles["creator-avatar"]}
-                src={match.creator.avatar}
-                alt={`${match.creator.name} avatar`}
-              />
-              <h2>{match.creator.name}</h2>
-              <h3>A {match.points} puntos</h3>
-              <div>
-                Jugadores: {match.players.length}/{match.playersCount}
-                <div className={styles["avatars"]}>
-                  {match.players.map(player => (
-                    <img
-                      key={player.name}
-                      className={styles["player-avatar"]}
-                      src={player.avatar}
-                      alt={`${player.name} avatar`}
-                    />
-                  ))}
-                  {Array(match.playersCount - match.players.length)
-                    .fill(undefined)
-                    .map((_, i) => (
-                      <div key={i} className={styles["no-player-avatar"]} />
-                    ))}
-                </div>
-              </div>
+          <img
+            className={styles["creator-avatar"]}
+            src={match.creator.avatar}
+            alt={`${match.creator.name} avatar`}
+          />
+          <h2>{match.creator.name}</h2>
+          <h3>A {match.points} puntos</h3>
+          <div>
+            Jugadores: {match.players.length}/{match.playersCount}
+            <div className={styles["avatars"]}>
+              {match.players.map(player => (
+                <img
+                  key={player.name}
+                  className={styles["player-avatar"]}
+                  src={player.avatar}
+                  alt={`${player.name} avatar`}
+                />
+              ))}
+              {Array(match.playersCount - match.players.length)
+                .fill(undefined)
+                .map((_, i) => (
+                  <div key={i} className={styles["no-player-avatar"]} />
+                ))}
             </div>
-          )}
-        </Mutation>
+          </div>
+        </Link>
       ))}
     </ul>
   );

@@ -169,8 +169,9 @@ class MatchAPI extends DataSource {
         .populate("players.data")
     );
 
-    // Prevent user from accessing a match not joined
+    // Prevent user from accessing a match not joined if it's already started
     if (
+      match.status !== "waiting" &&
       match.creator.id !== userId &&
       !R.map(R.prop("id"), match.players).includes(userId)
     ) {

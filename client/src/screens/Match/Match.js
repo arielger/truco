@@ -1,6 +1,6 @@
 import React, { Fragment } from "react";
 import * as R from "ramda";
-import { Query, Mutation } from "react-apollo";
+import { Query, Mutation, withApollo } from "react-apollo";
 import { Prompt } from "react-router-dom";
 import gql from "graphql-tag";
 import Modal from "react-modal";
@@ -10,6 +10,14 @@ import styles from "./Match.module.scss";
 import PlayerCards from "./PlayerCards";
 import PlayedCards from "./PlayedCards";
 import Scores from "./Scores";
+
+const JOIN_MATCH = gql`
+  mutation joinMatch($matchId: ID!) {
+    joinMatch(matchId: $matchId) {
+      id
+    }
+  }
+`;
 
 const trucoActions = ["TRUCO", "RETRUCO", "VALE_CUATRO"];
 
@@ -100,6 +108,7 @@ const PLAY_TRUCO = gql`
 const MatchInner = ({
   user,
   matchId,
+  joinMatch,
   subscribeToUpdates,
   history,
   data,
@@ -115,6 +124,11 @@ const MatchInner = ({
 
   if (loading) return <span>Loading</span>;
   if (error) return <span>Error</span>;
+
+  const userJoinedMatch = R.pipe(
+    R.map(R.prop("id")),
+    R.includes(user.id)
+  )(data.match.players);
 
   const notPlayedCards = R.reject(R.prop("played"), data.match.myCards);
   const playedCards = R.pipe(
@@ -201,6 +215,9 @@ const MatchInner = ({
                 <div key={i} className={styles["avatar"]} />
               ))}
           </div>
+          {!userJoinedMatch && (
+            <button onClick={joinMatch}>Unirse a la partida</button>
+          )}
         </div>
       )}
       {data.match.status === "playing" && (
@@ -285,12 +302,19 @@ const MatchInner = ({
   );
 };
 
-export default function Match({ history, user, match }) {
+function Match({ history, user, match, client }) {
   const matchId = match.params.matchId;
 
-  React.useEffect(() => {
-    // @todo: Join match when entering Match screen (so it's possible to share URL)
-  }, []);
+  const joinMatch = () => {
+    client
+      .mutate({
+        variables: { matchId },
+        mutation: JOIN_MATCH
+      })
+      .then(({ data: { joinMatch } }) => {
+        console.log("joinMatch:", joinMatch);
+      });
+  };
 
   return (
     <div className={styles["match"]}>
@@ -306,6 +330,7 @@ export default function Match({ history, user, match }) {
             user={user}
             matchId={matchId}
             history={history}
+            joinMatch={joinMatch}
             subscribeToUpdates={() =>
               subscribeToMore({
                 document: MATCH_SUBSCRIPTION,
@@ -329,3 +354,5 @@ export default function Match({ history, user, match }) {
     </div>
   );
 }
+
+export default withApollo(Match);
