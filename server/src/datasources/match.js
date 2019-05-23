@@ -128,6 +128,27 @@ const assocTrucoStatus = userId => match => {
   return result;
 };
 
+// @todo -> Review error handling
+// https://blog.apollographql.com/full-stack-error-handling-with-graphql-apollo-5c12da407210
+const validateMatchAction = (matchId, match, userId) => {
+  if (!match) {
+    return `There is no match with the id ${matchId}`;
+  }
+
+  if (match.winnerTeam) {
+    return `The match with the id ${matchId} is already finished`;
+  }
+
+  if (
+    !R.pipe(
+      R.map(player => player.data.toString()),
+      R.includes(userId)
+    )(match.players)
+  ) {
+    return `The user with the id ${userId} hasn't joined the match ${matchId}`;
+  }
+};
+
 class MatchAPI extends DataSource {
   constructor() {
     super();
@@ -303,23 +324,10 @@ class MatchAPI extends DataSource {
   async playCard({ matchId, userId, cardId }) {
     const match = await Match.findById(matchId);
 
-    if (!match) {
-      throw new Error(`There is no match with the id ${matchId}`);
-    }
+    const actionError = validateMatchAction(matchId, match, userId);
 
-    if (match.winnerTeam) {
-      throw new Error(`The match with the id ${matchId} is already finished`);
-    }
-
-    if (
-      !R.pipe(
-        R.map(player => player.data.toString()),
-        R.includes(userId)
-      )(match.players)
-    ) {
-      throw new Error(
-        `The user with the id ${userId} hasn't joined the match ${matchId}`
-      );
+    if (actionError) {
+      throw new Error(actionError);
     }
 
     const currentRound = R.last(match.rounds);
@@ -528,24 +536,10 @@ class MatchAPI extends DataSource {
   async playTruco({ matchId, userId, action }) {
     const match = await Match.findById(matchId);
 
-    // @todo: Move validations to generic function (DRY code)
-    if (!match) {
-      throw new Error(`There is no match with the id ${matchId}`);
-    }
+    const actionError = validateMatchAction(matchId, match, userId);
 
-    if (match.winnerTeam) {
-      throw new Error(`The match with the id ${matchId} is already finished`);
-    }
-
-    if (
-      !R.pipe(
-        R.map(player => player.data.toString()),
-        R.includes(userId)
-      )(match.players)
-    ) {
-      throw new Error(
-        `The user with the id ${userId} hasn't joined the match ${matchId}`
-      );
+    if (actionError) {
+      throw new Error(actionError);
     }
 
     const currentRound = R.last(match.rounds);
