@@ -116,6 +116,23 @@ const roundSchema = new mongoose.Schema({
       type: Number,
       required: true
     }
+  },
+  envido: {
+    list: [
+      {
+        type: String,
+        enum: ["ENVIDO", "REAL_ENVIDO", "FALTA_ENVIDO"]
+      }
+    ],
+    status: {
+      type: String,
+      enum: ["ACCEPTED", "REJECTED", "PENDING"],
+      required: true
+    },
+    isFromFirstTeam: {
+      type: Boolean,
+      required: true
+    }
   }
 });
 

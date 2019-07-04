@@ -10,6 +10,7 @@ import styles from "./Match.module.scss";
 import PlayerCards from "./PlayerCards";
 import PlayedCards from "./PlayedCards";
 import Scores from "./Scores";
+import { getTrucoActions, getEnvidoActions } from "./utils";
 
 const JOIN_MATCH = gql`
   mutation joinMatch($matchId: ID!) {
@@ -18,15 +19,6 @@ const JOIN_MATCH = gql`
     }
   }
 `;
-
-const trucoActions = ["TRUCO", "RETRUCO", "VALE_CUATRO"];
-
-const nextPossibleAction = action =>
-  R.pipe(
-    act => R.findIndex(R.equals(act), trucoActions),
-    R.inc,
-    actionIndex => trucoActions[actionIndex]
-  )(action);
 
 const matchFields = `
   status
@@ -51,6 +43,7 @@ const matchFields = `
     cards
   }
   nextPlayer
+  isLastPlayerFromTeam
   myPoints
   theirPoints
   roundWinnerTeam
@@ -60,6 +53,11 @@ const matchFields = `
     status
     team
     hand
+  }
+  envido {
+    list
+    status
+    team
   }
 `;
 
@@ -99,6 +97,15 @@ const PLAY_CARD = gql`
 const PLAY_TRUCO = gql`
   mutation playTruco($matchId: ID!, $action: TrucoActions!) {
     playTruco(matchId: $matchId, action: $action) {
+      success
+      message
+    }
+  }
+`;
+
+const PLAY_ENVIDO = gql`
+  mutation playTruco($matchId: ID!, $action: EnvidoActions!) {
+    playEnvido(matchId: $matchId, action: $action) {
       success
       message
     }
@@ -145,26 +152,24 @@ const MatchInner = ({
     data.match.status === "playing" &&
     R.cond([
       [
-        R.pipe(
-          // Don't show any action if...
-          R.anyPass([
-            // it's not your turn and you are not answering
-            R.both(
-              R.always(data.match.nextPlayer !== user.id),
-              ({ status }) => status !== "PENDING"
-            ),
-            // are waiting for response of the other team
-            R.both(R.propEq("status", "PENDING"), R.propEq("team", "we")),
-            // the other team accepted truco the last time
-            R.both(R.propEq("status", "ACCEPTED"), R.propEq("team", "them")),
-            // you accepted truco in the same hand (prevent saying truco + action in sequence)
-            R.allPass([
-              R.propEq("status", "ACCEPTED"),
-              R.propEq("team", "we"),
-              R.propEq("hand", currentHand)
-            ])
+        // Don't show any action if...
+        R.anyPass([
+          // it's not your turn and you are not answering
+          R.both(
+            R.always(data.match.nextPlayer !== user.id),
+            ({ status }) => status !== "PENDING"
+          ),
+          // are waiting for response of the other team
+          R.both(R.propEq("status", "PENDING"), R.propEq("team", "we")),
+          // the other team accepted truco the last time
+          R.both(R.propEq("status", "ACCEPTED"), R.propEq("team", "them")),
+          // you accepted truco in the same hand (prevent saying truco + action in sequence)
+          R.allPass([
+            R.propEq("status", "ACCEPTED"),
+            R.propEq("team", "we"),
+            R.propEq("hand", currentHand)
           ])
-        ),
+        ]),
         R.always([])
       ],
       // If is answering show accept, reject and next type
@@ -172,7 +177,7 @@ const MatchInner = ({
         R.propEq("status", "PENDING"),
         R.pipe(
           R.prop("type"),
-          type => (type ? [nextPossibleAction(type)] : []),
+          type => (type ? [getTrucoActions(type)] : []),
           R.filter(Boolean),
           R.concat(["ACCEPT", "REJECT"])
         )
@@ -182,7 +187,7 @@ const MatchInner = ({
         R.T,
         R.pipe(
           R.prop("type"),
-          nextPossibleAction,
+          getTrucoActions,
           R.of,
           R.filter(Boolean)
         )
@@ -193,6 +198,28 @@ const MatchInner = ({
       team: R.path(["truco", "team"])(data.match),
       hand: R.path(["truco", "hand"])(data.match)
     });
+
+  const envidoAvailableActions =
+    data.match.status === "playing" &&
+    R.cond([
+      [
+        () =>
+          !data.match.envido &&
+          data.match.nextPlayer === user.id &&
+          data.match.isLastPlayerFromTeam &&
+          R.pipe(
+            R.filter(R.propEq("played", true)),
+            R.length,
+            playedCards => playedCards === 0
+          )(data.match.myCards),
+        R.always(["ENVIDO", "REAL_ENVIDO", "FALTA_ENVIDO"])
+      ],
+      [
+        R.both(R.propEq("status", "PENDING"), R.propEq("team", "them")),
+        ({ list = [] }) => ["ACCEPT", "REJECT", ...getEnvidoActions(list)]
+      ],
+      [R.T, R.always([])]
+    ])(R.propOr({}, "envido", data.match));
 
   return (
     <div className={styles["match-inner"]}>
@@ -243,6 +270,24 @@ const MatchInner = ({
                     disabled={!data.match.nextPlayer === user.id}
                     onClick={() =>
                       playTruco({
+                        variables: { matchId, action }
+                      })
+                    }
+                  >
+                    {action}
+                  </button>
+                ))}
+              </div>
+            )}
+          </Mutation>
+          <Mutation mutation={PLAY_ENVIDO}>
+            {playEnvido => (
+              <div>
+                {envidoAvailableActions.map(action => (
+                  <button
+                    key={action}
+                    onClick={() =>
+                      playEnvido({
                         variables: { matchId, action }
                       })
                     }

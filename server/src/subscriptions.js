@@ -11,6 +11,7 @@ module.exports = {
     START_GAME: "START_GAME",
     NEW_MOVE: "NEW_MOVE",
     TRUCO_ACTION: "TRUCO_ACTION",
+    ENVIDO_ACTION: "ENVIDO_ACTION",
     NEW_ROUND: "NEW_ROUND"
   }
 };

@@ -55,6 +55,12 @@ module.exports = {
         throw new Error("You must be logged in to send truco action");
       }
       return dataSources.matchAPI.playTruco({ matchId, userId, action });
+    },
+    playEnvido: (parent, { matchId, action }, { userId, dataSources }) => {
+      if (!userId) {
+        throw new Error("You must be logged in to send truco action");
+      }
+      return dataSources.matchAPI.playEnvido({ matchId, userId, action });
     }
   },
   Subscription: {
@@ -74,7 +80,8 @@ module.exports = {
             events.START_GAME,
             events.NEW_MOVE,
             events.NEW_ROUND,
-            events.TRUCO_ACTION
+            events.TRUCO_ACTION,
+            events.ENVIDO_ACTION
           ]),
         (payload, variables, context) => {
           const isSubscribedToMatch =

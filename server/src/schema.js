@@ -33,11 +33,29 @@ const typeDefs = gql`
     REJECTED
   }
 
+  enum EnvidoType {
+    ENVIDO
+    REAL_ENVIDO
+    FALTA_ENVIDO
+  }
+
+  enum EnvidoStatus {
+    PENDING
+    ACCEPTED
+    REJECTED
+  }
+
   type Truco {
     type: TrucoType!
     status: TrucoStatus!
     team: Team!
     hand: Int!
+  }
+
+  type Envido {
+    list: [EnvidoType]!
+    status: EnvidoStatus!
+    team: Team!
   }
 
   type Match {
@@ -59,12 +77,14 @@ const typeDefs = gql`
     ${matchFields}
     myCards: [Card!]!
     nextPlayer: ID
+    isLastPlayerFromTeam: Boolean
     cardsPlayedByPlayer: [cardsByPlayer!]!
     roundWinnerTeam: Team
     matchWinnerTeam: Team
     myPoints: Int
     theirPoints: Int
     truco: Truco
+    envido: Envido
   }
 
   enum MatchListUpdateType {
@@ -84,6 +104,7 @@ const typeDefs = gql`
     NEW_MOVE
     NEW_ROUND
     TRUCO_ACTION
+    ENVIDO_ACTION
   }
 
   type MatchUpdate {
@@ -91,12 +112,14 @@ const typeDefs = gql`
     ${matchFields}
     myCards: [Card!]
     nextPlayer: ID
+    isLastPlayerFromTeam: Boolean
     cardsPlayedByPlayer: [cardsByPlayer!]
     roundWinnerTeam: Team
     matchWinnerTeam: Team
     myPoints: Int
     theirPoints: Int
     truco: Truco
+    envido: Envido
   }
 
   type Player {
@@ -124,6 +147,14 @@ const typeDefs = gql`
     REJECT
   }
 
+   enum EnvidoActions {
+     ENVIDO
+     REAL_ENVIDO
+     FALTA_ENVIDO
+     ACCEPT
+     REJECT
+   }
+
   type MatchUpdateResponse {
     success: Boolean!
     message: String
@@ -135,7 +166,8 @@ const typeDefs = gql`
     createMatch(playersCount: Int!, points: Int!): Match!
     joinMatch(matchId: ID!): Match!
     playCard(matchId: ID!, cardId: ID!): PlayerMatch!
-    playTruco(matchId: ID!, action: TrucoActions!): MatchUpdateResponse! 
+    playTruco(matchId: ID!, action: TrucoActions!): MatchUpdateResponse!
+    playEnvido(matchId: ID!, action: EnvidoActions!): MatchUpdateResponse!
   }
 
   type Subscription {

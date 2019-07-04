@@ -2,6 +2,11 @@ const R = require("ramda");
 const pickRandom = require("pick-random");
 const { cards } = require("./cards");
 
+const getPlayersInPlayingOrder = initialPlayerIndex => players => [
+  ...players.slice(initialPlayerIndex),
+  ...players.slice(0, initialPlayerIndex)
+];
+
 const getNewRoundData = playersIds => {
   const playersCards = R.pipe(
     R.map(({ card }) => ({ card, played: false })),
@@ -51,46 +56,6 @@ const getRoundWinnerTeam = handsResults => {
   return false;
 };
 
-const trucoActions = ["TRUCO", "RETRUCO", "VALE_CUATRO"];
-
-const isValidTrucoAction = ({ action, roundTruco }) => {
-  const currentStatus = R.prop("status", roundTruco);
-  const currentAction = R.prop("type", roundTruco);
-
-  const nextPossibleAction = R.pipe(
-    act => R.findIndex(R.equals(act), trucoActions),
-    R.inc,
-    actionIndex => trucoActions[actionIndex]
-  )(currentAction);
-
-  return R.anyPass([
-    R.allPass([
-      R.always(currentStatus === "PENDING"),
-      R.anyPass([
-        R.equals("ACCEPT"),
-        R.equals("REJECT"),
-        R.equals(nextPossibleAction)
-      ])
-    ]),
-    R.allPass([
-      R.always(!currentStatus || currentStatus === "ACCEPTED"),
-      R.equals(nextPossibleAction)
-    ])
-  ])(action);
-};
-
-const getRoundTrucoPoints = round =>
-  R.pipe(
-    R.path(["truco", "type"]),
-    type =>
-      ({
-        TRUCO: 2,
-        RETRUCO: 3,
-        VALE_CUATRO: 4
-      }[type]),
-    R.defaultTo(1)
-  )(round);
-
 const getMatchWinnerTeam = (match, roundWinnerTeam, trucoPoints) => {
   const { pointsFirstTeam, pointsSecondTeam } = match;
 
@@ -109,10 +74,28 @@ const getMatchWinnerTeam = (match, roundWinnerTeam, trucoPoints) => {
   return false;
 };
 
+const isLastPlayerFromTeam = (match, userId) => {
+  if (!match.rounds.length) return false;
+
+  const currentHand = R.pipe(
+    R.last,
+    R.prop("hands"),
+    R.last
+  )(match.rounds);
+
+  return R.pipe(
+    getPlayersInPlayingOrder(currentHand.initialPlayerIndex),
+    // Get only last player from each team
+    players => players.slice(-2),
+    R.map(({ id, data }) => (data ? data.toString() : id)),
+    R.includes(userId)
+  )(match.players);
+};
+
 module.exports = {
+  getPlayersInPlayingOrder,
   getNewRoundData,
   getRoundWinnerTeam,
   getMatchWinnerTeam,
-  isValidTrucoAction,
-  getRoundTrucoPoints
+  isLastPlayerFromTeam
 };

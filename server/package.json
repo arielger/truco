@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest --watch",
     "db:migrations:all": "./node_modules/.bin/sequelize db:migrate",
     "db:migrations:undo:all": "./node_modules/.bin/sequelize db:migrate:undo:all",
     "db:migration:create": "./node_modules/.bin/sequelize migration:generate"
@@ -30,5 +30,8 @@
     "shortid": "^2.2.14",
     "subscriptions-transport-ws": "^0.9.15",
     "uuid": "^3.3.2"
+  },
+  "devDependencies": {
+    "jest": "^24.8.0"
   }
 }
