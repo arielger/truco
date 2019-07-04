@@ -1,4 +1,3 @@
-const R = require("ramda");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const { DataSource } = require("apollo-datasource");

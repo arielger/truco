@@ -1,8 +1,9 @@
 const R = require("ramda");
 const mongoose = require("mongoose");
 const { DataSource } = require("apollo-datasource");
-const { pubsub, events } = require("../subscriptions");
 const delay = require("delay");
+
+const { pubsub, events } = require("../subscriptions");
 
 const { getHandTeamWinner } = require("../utils/cards");
 const {
@@ -143,10 +144,6 @@ const validateMatchAction = (matchId, match, userId) => {
 };
 
 class MatchAPI extends DataSource {
-  constructor() {
-    super();
-  }
-
   initialize(config) {
     this.context = config.context;
   }
@@ -359,10 +356,10 @@ class MatchAPI extends DataSource {
     }
 
     if (
-      R.anyPass(
+      R.anyPass([
         R.pathEq(["truco", "status"], "PENDING"),
         R.pathEq(["envido", "status"], "PENDING")
-      )(currentRound)
+      ])(currentRound)
     ) {
       throw new Error("Can't play card if truco or envido answer is pending");
     }
