@@ -135,8 +135,15 @@ const typeDefs = gql`
     me: Player!
   }
 
-  type LogInResult {
+  type AuthUser {
+    name: String!
+    email: String
+    avatar: String
+  }
+
+  type AuthResponse {
     token: String
+    user: AuthUser
   }
 
   enum TrucoActions {
@@ -162,7 +169,9 @@ const typeDefs = gql`
 
   # @todo: playCard should return MatchUpdatResponse instead of full match
   type Mutation {
-    logInAsGuest(name: String!, avatar: String): LogInResult!
+    logInAsGuest: AuthResponse!
+    logInWithFacebook(accessToken: String!): AuthResponse!
+    logInWithGoogle(accessToken: String!): AuthResponse!
     createMatch(playersCount: Int!, points: Int!): Match!
     joinMatch(matchId: ID!): Match!
     playCard(matchId: ID!, cardId: ID!): PlayerMatch!

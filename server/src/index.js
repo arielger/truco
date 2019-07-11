@@ -14,11 +14,7 @@ const PORT = process.env.PORT || 4000;
 const verifyToken = token =>
   new Promise((resolve, reject) => {
     jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-      if (!err) {
-        resolve({ userId: decoded.id });
-      } else {
-        resolve();
-      }
+      resolve(!err ? { userId: decoded.id } : {});
     });
   });
 
@@ -29,17 +25,20 @@ const server = new ApolloServer({
     matchAPI: new MatchAPI(),
     userAPI: new UserAPI()
   }),
-  context: ({ req, connection }) => {
-    //www.apollographql.com/docs/apollo-server/features/subscriptions.html#Context-with-Subscriptions
+  context: async ({ req, res, connection }) => {
+    // www.apollographql.com/docs/apollo-server/features/subscriptions.html#Context-with-Subscriptions
     if (connection) {
       return connection.context;
     }
 
     const token = req.headers.authorization || "";
 
-    if (token) {
-      return verifyToken(token);
-    }
+    // Add request and response to GraphQL context
+    return {
+      req,
+      res,
+      ...(token ? await verifyToken(token) : {})
+    };
   },
   subscriptions: {
     onConnect: (connectionParams, webSocket) => {

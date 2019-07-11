@@ -76,13 +76,13 @@ client.writeData({
 });
 
 const IS_LOGGED_IN = gql`
-  {
+  query isLoggedIn {
     isLoggedIn @client
   }
 `;
 
 const FETCH_PROFILE = gql`
-  {
+  query fetchProfile {
     me {
       id
       avatar
@@ -103,6 +103,7 @@ const App = () => {
                   <div className={styles["layout"]}>
                     <Query query={FETCH_PROFILE}>
                       {({ data, loading, error }) => {
+                        if (loading) return "Loading";
                         const user = R.prop("me", data);
                         return (
                           <>

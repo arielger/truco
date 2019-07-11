@@ -36,8 +36,38 @@ module.exports = {
       }
       return dataSources.matchAPI.createMatch({ playersCount, points, userId });
     },
-    logInAsGuest: (parent, { name, avatar }, { dataSources }) =>
-      dataSources.userAPI.logInAsGuest({ name, avatar }),
+    logInAsGuest: (parent, _, { dataSources }) =>
+      dataSources.userAPI.logInAsGuest(),
+    logInWithFacebook: async (
+      parent,
+      { accessToken },
+      { dataSources, req, res }
+    ) => {
+      req.body = {
+        ...req.body,
+        access_token: accessToken
+      };
+
+      return dataSources.userAPI.logInWithFacebook({
+        req,
+        res
+      });
+    },
+    logInWithGoogle: async (
+      parent,
+      { accessToken },
+      { dataSources, req, res }
+    ) => {
+      req.body = {
+        ...req.body,
+        access_token: accessToken
+      };
+
+      return dataSources.userAPI.logInWithGoogle({
+        req,
+        res
+      });
+    },
     joinMatch: (parent, { matchId }, { userId, dataSources }) => {
       if (!userId) {
         throw new Error("You must be logged in to join a match");
