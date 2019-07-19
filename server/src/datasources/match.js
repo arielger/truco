@@ -174,7 +174,8 @@ class MatchAPI extends DataSource {
       assocIsLastPlayerFromTeam(userId),
       assocPoints(userId),
       assocRoundWinnerTeam(userId),
-      assocTrucoStatus(userId)
+      assocTrucoStatus(userId),
+      assocEnvidoStatus(userId)
     )(
       await Match.findById(matchId)
         .populate("creator")
@@ -465,7 +466,8 @@ class MatchAPI extends DataSource {
             assocRoundWinnerTeam(player.id),
             assocIsLastPlayerFromTeam(player.id),
             assocMatchWinnerTeam(player.id),
-            assocTrucoStatus(player.id)
+            assocTrucoStatus(player.id),
+            assocEnvidoStatus(player.id)
           )(updatedMatch),
           type: events.NEW_MOVE
         }
@@ -540,6 +542,10 @@ class MatchAPI extends DataSource {
     const currentRound = R.last(match.rounds);
     const currentRoundIndex = match.rounds.length - 1;
     const roundTruco = R.prop("truco")(currentRound);
+
+    if (R.pathEq(["envido", "status"], "PENDING", currentRound)) {
+      throw new Error("Can't play truco if envido is pending");
+    }
 
     // Check if it's initial "truco" or if it's responding to truco from the other team
     const isAnswering = R.pipe(
@@ -661,6 +667,7 @@ class MatchAPI extends DataSource {
             assocPoints(player.id),
             assocRoundWinnerTeam(player.id),
             assocTrucoStatus(player.id),
+            assocEnvidoStatus(player.id),
             assocIsLastPlayerFromTeam(player.id)
           )(updatedMatch),
           type: events.TRUCO_ACTION
@@ -687,6 +694,10 @@ class MatchAPI extends DataSource {
     const currentRound = R.last(match.rounds);
     const currentRoundIndex = match.rounds.length - 1;
     const roundEnvido = R.prop("envido")(currentRound);
+
+    if (R.pathEq(["truco", "status"], "PENDING", currentRound)) {
+      throw new Error("Can't play envido if truco is pending");
+    }
 
     if (currentRound.hands.length > 1) {
       throw new Error(

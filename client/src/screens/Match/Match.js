@@ -10,7 +10,7 @@ import styles from "./Match.module.scss";
 import PlayerCards from "./PlayerCards";
 import PlayedCards from "./PlayedCards";
 import Scores from "./Scores";
-import { getTrucoActions, getEnvidoActions } from "./utils";
+import Actions from "./Actions";
 
 const JOIN_MATCH = gql`
   mutation joinMatch($matchId: ID!) {
@@ -94,30 +94,13 @@ const PLAY_CARD = gql`
   }
 `;
 
-const PLAY_TRUCO = gql`
-  mutation playTruco($matchId: ID!, $action: TrucoActions!) {
-    playTruco(matchId: $matchId, action: $action) {
-      success
-      message
-    }
-  }
-`;
-
-const PLAY_ENVIDO = gql`
-  mutation playTruco($matchId: ID!, $action: EnvidoActions!) {
-    playEnvido(matchId: $matchId, action: $action) {
-      success
-      message
-    }
-  }
-`;
-
 const MatchInner = ({
   user,
   matchId,
   joinMatch,
   subscribeToUpdates,
   history,
+  client,
   data,
   loading,
   error
@@ -146,80 +129,9 @@ const MatchInner = ({
 
   const currentHand = playedCards.length + 1;
 
+  const isCurrentPlayer = data.match.nextPlayer === user.id;
+
   const otherPlayers = R.reject(R.propEq("id", user.id), data.match.players);
-
-  const trucoAvailableActions =
-    data.match.status === "playing" &&
-    R.cond([
-      [
-        // Don't show any action if...
-        R.anyPass([
-          // it's not your turn and you are not answering
-          R.both(
-            R.always(data.match.nextPlayer !== user.id),
-            ({ status }) => status !== "PENDING"
-          ),
-          // are waiting for response of the other team
-          R.both(R.propEq("status", "PENDING"), R.propEq("team", "we")),
-          // the other team accepted truco the last time
-          R.both(R.propEq("status", "ACCEPTED"), R.propEq("team", "them")),
-          // you accepted truco in the same hand (prevent saying truco + action in sequence)
-          R.allPass([
-            R.propEq("status", "ACCEPTED"),
-            R.propEq("team", "we"),
-            R.propEq("hand", currentHand)
-          ])
-        ]),
-        R.always([])
-      ],
-      // If is answering show accept, reject and next type
-      [
-        R.propEq("status", "PENDING"),
-        R.pipe(
-          R.prop("type"),
-          type => (type ? [getTrucoActions(type)] : []),
-          R.filter(Boolean),
-          R.concat(["ACCEPT", "REJECT"])
-        )
-      ],
-      // Otherwise, show only next type
-      [
-        R.T,
-        R.pipe(
-          R.prop("type"),
-          getTrucoActions,
-          R.of,
-          R.filter(Boolean)
-        )
-      ]
-    ])({
-      type: R.path(["truco", "type"])(data.match),
-      status: R.path(["truco", "status"])(data.match),
-      team: R.path(["truco", "team"])(data.match),
-      hand: R.path(["truco", "hand"])(data.match)
-    });
-
-  const envidoAvailableActions =
-    data.match.status === "playing" &&
-    R.cond([
-      [
-        () =>
-          !data.match.envido &&
-          data.match.nextPlayer === user.id &&
-          data.match.isLastPlayerFromTeam &&
-          R.pipe(
-            R.filter(R.propEq("played", true)),
-            R.length,
-            playedCards => playedCards === 0
-          )(data.match.myCards),
-        R.always(["ENVIDO", "REAL_ENVIDO", "FALTA_ENVIDO"])
-      ],
-      [
-        R.both(R.propEq("status", "PENDING"), R.propEq("team", "them")),
-        ({ list = [] }) => ["ACCEPT", "REJECT", ...getEnvidoActions(list)]
-      ],
-      [R.T, R.always([])]
-    ])(R.propOr({}, "envido", data.match));
 
   return (
     <div className={styles["match-inner"]}>
@@ -255,49 +167,13 @@ const MatchInner = ({
             myPoints={data.match.myPoints}
             theirPoints={data.match.theirPoints}
           />
-          <Mutation mutation={PLAY_TRUCO}>
-            {playTruco => (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  width: 200
-                }}
-              >
-                {trucoAvailableActions.map(action => (
-                  <button
-                    key={action}
-                    disabled={!data.match.nextPlayer === user.id}
-                    onClick={() =>
-                      playTruco({
-                        variables: { matchId, action }
-                      })
-                    }
-                  >
-                    {action}
-                  </button>
-                ))}
-              </div>
-            )}
-          </Mutation>
-          <Mutation mutation={PLAY_ENVIDO}>
-            {playEnvido => (
-              <div>
-                {envidoAvailableActions.map(action => (
-                  <button
-                    key={action}
-                    onClick={() =>
-                      playEnvido({
-                        variables: { matchId, action }
-                      })
-                    }
-                  >
-                    {action}
-                  </button>
-                ))}
-              </div>
-            )}
-          </Mutation>
+          <Actions
+            client={client}
+            match={data.match}
+            matchId={matchId}
+            isCurrentPlayer={isCurrentPlayer}
+            currentHand={currentHand}
+          />
           <PlayedCards
             cardsPlayedByPlayer={data.match.cardsPlayedByPlayer}
             userId={user.id}
@@ -376,6 +252,7 @@ function Match({ history, user, match, client }) {
             matchId={matchId}
             history={history}
             joinMatch={joinMatch}
+            client={client}
             subscribeToUpdates={() =>
               subscribeToMore({
                 document: MATCH_SUBSCRIPTION,

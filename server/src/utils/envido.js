@@ -75,13 +75,18 @@ const assocEnvidoStatus = userId => match => {
   const lastRound = R.last(match.rounds);
   const envido = R.prop("envido", lastRound);
 
-  return R.when(
-    R.always(envido),
+  return R.ifElse(
+    () =>
+      R.pipe(
+        R.propOr([], "list"),
+        R.length
+      )(envido),
     R.assoc("envido", {
       ...envido,
       team:
         R.prop("isFromFirstTeam", envido) === isFromFirstTeam ? "we" : "them"
-    })
+    }),
+    R.dissoc("envido")
   )(match);
 };
 
