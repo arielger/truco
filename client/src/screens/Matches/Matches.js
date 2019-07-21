@@ -1,9 +1,10 @@
 import React from "react";
 import * as R from "ramda";
 import { withApollo, Query } from "react-apollo";
-import { Link } from "react-router-dom";
 import gql from "graphql-tag";
+
 import NewMatch from "../NewMatch";
+import MatchesList from "../../components/MatchesList";
 import styles from "./Matches.module.scss";
 
 const MATCHES_QUERY = gql`
@@ -100,70 +101,23 @@ const Matches = ({ history, client }) => {
         client={client}
       />
       <Query query={MATCHES_QUERY} fetchPolicy="cache-and-network">
-        {({ subscribeToMore, ...result }) => (
-          <MatchesList
-            history={history}
-            {...result}
-            subscribeToUpdates={() =>
-              subscribeToMore({
-                document: MATCHES_SUBSCRIPTION,
-                updateQuery: handleMatchUpdates
-              })
-            }
-          />
-        )}
+        {({ subscribeToMore, loading, error, data }) => {
+          return (
+            <MatchesList
+              loading={loading}
+              error={error}
+              matches={data.matches}
+              subscribeToUpdates={() =>
+                subscribeToMore({
+                  document: MATCHES_SUBSCRIPTION,
+                  updateQuery: handleMatchUpdates
+                })
+              }
+            />
+          );
+        }}
       </Query>
     </div>
-  );
-};
-
-const MatchesList = ({ history, subscribeToUpdates, data, loading, error }) => {
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error :(</p>;
-
-  React.useEffect(() => {
-    const unsubscribe = subscribeToUpdates();
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  return (
-    <ul className={styles["matches"]}>
-      {data.matches.map(match => (
-        <Link
-          to={`/match/${match.id}`}
-          className={styles["match"]}
-          key={match.id}
-        >
-          <img
-            className={styles["creator-avatar"]}
-            src={match.creator.avatar}
-            alt={`${match.creator.name} avatar`}
-          />
-          <h2>{match.creator.name}</h2>
-          <h3>A {match.points} puntos</h3>
-          <div>
-            Jugadores: {match.players.length}/{match.playersCount}
-            <div className={styles["avatars"]}>
-              {match.players.map(player => (
-                <img
-                  key={player.name}
-                  className={styles["player-avatar"]}
-                  src={player.avatar}
-                  alt={`${player.name} avatar`}
-                />
-              ))}
-              {Array(match.playersCount - match.players.length)
-                .fill(undefined)
-                .map((_, i) => (
-                  <div key={i} className={styles["no-player-avatar"]} />
-                ))}
-            </div>
-          </div>
-        </Link>
-      ))}
-    </ul>
   );
 };
 
