@@ -184,7 +184,7 @@ const MatchInner = ({
               position="top" //@todo: Refactor to handle 4 and 6 players
               playedCards={R.pipe(
                 R.find(R.propEq("playerId", player.id)),
-                R.propOr("cards")
+                R.propOr([], "cards")
               )(data.match.cardsPlayedByPlayer)}
             />
           ))}
