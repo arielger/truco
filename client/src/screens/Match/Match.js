@@ -3,7 +3,6 @@ import * as R from "ramda";
 import { Query, Mutation, withApollo } from "react-apollo";
 import { Prompt } from "react-router-dom";
 import gql from "graphql-tag";
-import Modal from "react-modal";
 
 import styles from "./Match.module.scss";
 
@@ -11,6 +10,7 @@ import PlayerCards from "./PlayerCards";
 import PlayedCards from "./PlayedCards";
 import Scores from "./Scores";
 import Actions from "./Actions";
+import WinnerModal from "./WinnerModal";
 
 const JOIN_MATCH = gql`
   mutation joinMatch($matchId: ID!) {
@@ -209,18 +209,12 @@ const MatchInner = ({
               />
             )}
           </Mutation>
-          <Modal
-            isOpen={!!data.match.matchWinnerTeam}
-            onRequestClose={() => {
-              history.replace("/matches");
-            }}
-          >
-            <h2>
-              {data.match.matchWinnerTeam === "we"
-                ? "Has ganado"
-                : "Has perdido"}
-            </h2>
-          </Modal>
+          {data.match.matchWinnerTeam && (
+            <WinnerModal
+              history={history}
+              winnerTeam={data.match.matchWinnerTeam}
+            />
+          )}
         </Fragment>
       )}
     </div>

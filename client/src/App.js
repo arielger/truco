@@ -109,14 +109,14 @@ const App = () => {
                           <>
                             <Header client={client} user={user} />
                             <Switch>
-                              <Route path="/matches" component={Matches} />
+                              <Route path="/partidas" component={Matches} />
                               <Route
                                 path="/match/:matchId"
                                 render={({ ...props }) => (
                                   <Match user={user} {...props} />
                                 )}
                               />
-                              <Redirect to="/matches" />
+                              <Redirect to="/partidas" />
                             </Switch>
                           </>
                         );
