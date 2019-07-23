@@ -106,7 +106,7 @@ const Matches = ({ history, client }) => {
             <MatchesList
               loading={loading}
               error={error}
-              matches={data.matches}
+              matches={R.propOr([], "matches", data)}
               subscribeToUpdates={() =>
                 subscribeToMore({
                   document: MATCHES_SUBSCRIPTION,

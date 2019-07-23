@@ -181,6 +181,8 @@ const MatchInner = ({
           {otherPlayers.map(player => (
             <PlayerCards
               key={player.id}
+              player={player}
+              isTheirTurn={player.id === data.match.nextPlayer}
               position="top" //@todo: Refactor to handle 4 and 6 players
               playedCards={R.pipe(
                 R.find(R.propEq("playerId", player.id)),
@@ -191,6 +193,8 @@ const MatchInner = ({
           <Mutation mutation={PLAY_CARD}>
             {playCard => (
               <PlayerCards
+                player={user}
+                isTheirTurn={isCurrentPlayer}
                 position="bottom"
                 isCurrentUser={true}
                 enablePlayCards={
