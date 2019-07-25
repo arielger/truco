@@ -61,12 +61,13 @@ storiesOf("PlayerCards", module)
       />
     </Wrapper>
   ))
-  .add("left opponent cards", () => (
+  .add("left opponent cards (with action)", () => (
     <Wrapper>
       <PlayerCards
         isCurrentUser={false}
         player={player}
         position="left"
+        action="ACCEPT"
         playedCards={[{}]}
         enablePlayCards={true}
         handlePlayCard={() => {}}

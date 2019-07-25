@@ -2,6 +2,7 @@ import React from "react";
 import * as R from "ramda";
 import cs from "classnames";
 
+import actionsToText from "../../../utils/actionsToText.json";
 import Card from "../../../components/Card";
 import styles from "./PlayerCards.module.scss";
 
@@ -13,17 +14,21 @@ export default function PlayerCards({
   isCurrentUser,
   isTheirTurn,
   notPlayedCards,
-  handlePlayCard
+  handlePlayCard,
+  action
 }) {
   return (
     <div className={cs(styles.player, styles[position])}>
-      <img
-        className={cs(styles.playerAvatar, {
-          [styles.isTheirTurn]: isTheirTurn
-        })}
-        src={player.avatar}
-        alt=""
-      />
+      <div className={styles.playerAvatarWrapper}>
+        <img
+          className={cs(styles.playerAvatar, {
+            [styles.isTheirTurn]: isTheirTurn
+          })}
+          src={player.avatar}
+          alt=""
+        />
+        {action && <div className={styles.action}>{actionsToText[action]}</div>}
+      </div>
       {isCurrentUser ? (
         <div
           className={cs(styles.currentUserCards, {

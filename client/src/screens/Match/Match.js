@@ -59,6 +59,10 @@ const matchFields = `
     status
     team
   }
+  lastAction {
+    playerId
+    type
+  }
 `;
 
 const MATCH_QUERY = gql`
@@ -110,7 +114,7 @@ const MatchInner = ({
     return () => {
       unsubscribe();
     };
-  });
+  }, []);
 
   if (loading) return <span>Loading</span>;
   if (error) return <span>Error</span>;
@@ -181,6 +185,10 @@ const MatchInner = ({
           {otherPlayers.map(player => (
             <PlayerCards
               key={player.id}
+              action={
+                R.pathEq(["lastAction", "playerId"], player.id, data.match) &&
+                data.match.lastAction.type
+              }
               player={player}
               isTheirTurn={player.id === data.match.nextPlayer}
               position="top" //@todo: Refactor to handle 4 and 6 players
@@ -194,6 +202,10 @@ const MatchInner = ({
             {playCard => (
               <PlayerCards
                 player={user}
+                action={
+                  R.pathEq(["lastAction", "playerId"], user.id, data.match) &&
+                  data.match.lastAction.type
+                }
                 isTheirTurn={isCurrentPlayer}
                 position="bottom"
                 isCurrentUser={true}

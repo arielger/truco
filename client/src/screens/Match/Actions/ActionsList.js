@@ -2,6 +2,7 @@ import React from "react";
 import gql from "graphql-tag";
 import Spinner from "react-svg-spinner";
 
+import actionsToText from "../../../utils/actionsToText.json";
 import styles from "./Actions.module.scss";
 
 const PLAY_TRUCO = gql`
@@ -21,17 +22,6 @@ const PLAY_ENVIDO = gql`
     }
   }
 `;
-
-const actionsToText = {
-  ACCEPT: "Quiero",
-  REJECT: "No quiero",
-  TRUCO: "Truco",
-  RETRUCO: "Retruco",
-  VALE_CUATRO: "Vale cuatro",
-  ENVIDO: "Envido",
-  REAL_ENVIDO: "Real envido",
-  FALTA_ENVIDO: "Falta envido"
-};
 
 export default function ActionsList({
   matchId,

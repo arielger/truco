@@ -670,7 +670,11 @@ class MatchAPI extends DataSource {
             assocEnvidoStatus(player.id),
             assocIsLastPlayerFromTeam(player.id)
           )(updatedMatch),
-          type: events.TRUCO_ACTION
+          type: events.TRUCO_ACTION,
+          lastAction: {
+            playerId: userId,
+            type: action
+          }
         }
       };
       pubsub.publish(events.TRUCO_ACTION, result);
@@ -808,7 +812,11 @@ class MatchAPI extends DataSource {
             assocEnvidoStatus(player.id),
             assocIsLastPlayerFromTeam(player.id)
           )(updatedMatch),
-          type: events.ENVIDO_ACTION
+          type: events.ENVIDO_ACTION,
+          lastAction: {
+            playerId: userId,
+            type: action
+          }
         }
       };
       pubsub.publish(events.ENVIDO_ACTION, result);

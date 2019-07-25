@@ -73,6 +73,11 @@ const typeDefs = gql`
     cards: [String]
   }
 
+  type Action {
+    playerId: ID
+    type: String
+  }
+
   type PlayerMatch {
     ${matchFields}
     myCards: [Card!]!
@@ -85,6 +90,7 @@ const typeDefs = gql`
     theirPoints: Int
     truco: Truco
     envido: Envido
+    lastAction: Action
   }
 
   enum MatchListUpdateType {
@@ -120,6 +126,7 @@ const typeDefs = gql`
     theirPoints: Int
     truco: Truco
     envido: Envido
+    lastAction: Action
   }
 
   type Player {

@@ -38,10 +38,9 @@ export const getTrucoActions = (match, isCurrentPlayer, currentHand) => {
           ])
         ])
       ]),
-      ({ type }) =>
-        R.tap(x => console.log("x", x))({
-          trucoActions: [...getNextTrucoAction(type)]
-        })
+      ({ type }) => ({
+        trucoActions: [...getNextTrucoAction(type)]
+      })
     ],
     [R.T, R.always({})]
   ])(R.propOr({}, "truco", match));

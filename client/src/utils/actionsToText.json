@@ -1,0 +1,10 @@
+{
+  "ACCEPT": "Quiero",
+  "REJECT": "No quiero",
+  "TRUCO": "Truco",
+  "RETRUCO": "Retruco",
+  "VALE_CUATRO": "Vale cuatro",
+  "ENVIDO": "Envido",
+  "REAL_ENVIDO": "Real envido",
+  "FALTA_ENVIDO": "Falta envido"
+}
