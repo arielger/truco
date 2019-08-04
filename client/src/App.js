@@ -4,6 +4,7 @@ import { ApolloProvider, Query } from "react-apollo";
 import { ApolloClient } from "apollo-client";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { ApolloLink, split } from "apollo-link";
+import { onError } from "apollo-link-error";
 import { getMainDefinition } from "apollo-utilities";
 import { HttpLink } from "apollo-link-http";
 import { setContext } from "apollo-link-context";
@@ -56,7 +57,24 @@ const requestLink = ({ queryOrMutationLink, subscriptionLink }) =>
     queryOrMutationLink
   );
 
+const errorLink = onError(({ graphQLErrors, networkError }) => {
+  if (graphQLErrors) {
+    graphQLErrors.forEach(({ message, locations, path, extensions }) => {
+      if (extensions.code === "UNAUTHENTICATED") {
+        localStorage.removeItem("token");
+        location.reload(); //eslint-disable-line no-restricted-globals
+      }
+      console.error(
+        `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`
+      );
+    });
+  }
+
+  if (networkError) console.error(`[Network error]: ${networkError}`);
+});
+
 const link = ApolloLink.from([
+  errorLink,
   requestLink({
     queryOrMutationLink: authLink.concat(networkInterface),
     subscriptionLink: webSocketLink

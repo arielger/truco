@@ -14,7 +14,7 @@
     "apollo-client": "^2.5.1",
     "apollo-link": "^1.2.8",
     "apollo-link-context": "^1.0.14",
-    "apollo-link-error": "^1.1.7",
+    "apollo-link-error": "^1.1.11",
     "apollo-link-http": "^1.5.11",
     "apollo-link-ws": "^1.0.14",
     "apollo-utilities": "^1.2.1",

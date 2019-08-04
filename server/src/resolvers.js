@@ -1,41 +1,33 @@
-const { withFilter } = require("apollo-server");
+const { withFilter, AuthenticationError } = require("apollo-server");
 
 const { pubsub, events } = require("./subscriptions");
 
+const authenticateRoute = next => (parent, args, context) => {
+  if (!context.userId) {
+    throw new AuthenticationError(
+      "You must be logged in to perform this action"
+    );
+  }
+  return next(parent, args, context);
+};
+
 module.exports = {
   Query: {
-    matches: async (parent, args, { userId, dataSources }) => {
-      if (!userId) {
-        throw new Error("You must be logged in to get the matches list");
-      }
-
-      return dataSources.matchAPI.getAllMatches({ userId });
-    },
-    match: async (_, { id }, { userId, dataSources }) => {
-      if (!userId) {
-        throw new Error("You must be logged in to access match data");
-      }
-
-      return dataSources.matchAPI.getMatchById({ matchId: id, userId });
-    },
-    me: async (_, { id }, { userId, dataSources }) => {
-      if (!userId) {
-        throw new Error("You must be logged in to get your profile");
-      }
-      return dataSources.userAPI.getUserInfo({ userId });
-    }
+    matches: authenticateRoute((parent, args, { userId, dataSources }) =>
+      dataSources.matchAPI.getAllMatches({ userId })
+    ),
+    match: authenticateRoute((parent, { id }, { userId, dataSources }) =>
+      dataSources.matchAPI.getMatchById({ matchId: id, userId })
+    ),
+    me: authenticateRoute((parent, args, { userId, dataSources }) =>
+      dataSources.userAPI.getUserInfo({ userId })
+    )
   },
   Mutation: {
-    createMatch: (
-      parent,
-      { playersCount, points },
-      { userId, dataSources }
-    ) => {
-      if (!userId) {
-        throw new Error("You must be logged in to create a match");
-      }
-      return dataSources.matchAPI.createMatch({ playersCount, points, userId });
-    },
+    createMatch: authenticateRoute(
+      (parent, { playersCount, points }, { userId, dataSources }) =>
+        dataSources.matchAPI.createMatch({ playersCount, points, userId })
+    ),
     logInAsGuest: (parent, _, { dataSources }) =>
       dataSources.userAPI.logInAsGuest(),
     logInWithFacebook: async (
@@ -68,30 +60,22 @@ module.exports = {
         res
       });
     },
-    joinMatch: (parent, { matchId }, { userId, dataSources }) => {
-      if (!userId) {
-        throw new Error("You must be logged in to join a match");
-      }
-      return dataSources.matchAPI.joinMatch({ matchId, userId });
-    },
-    playCard: (parent, { matchId, cardId }, { userId, dataSources }) => {
-      if (!userId) {
-        throw new Error("You must be logged in to play a card");
-      }
-      return dataSources.matchAPI.playCard({ matchId, userId, cardId });
-    },
-    playTruco: (parent, { matchId, action }, { userId, dataSources }) => {
-      if (!userId) {
-        throw new Error("You must be logged in to send truco action");
-      }
-      return dataSources.matchAPI.playTruco({ matchId, userId, action });
-    },
-    playEnvido: (parent, { matchId, action }, { userId, dataSources }) => {
-      if (!userId) {
-        throw new Error("You must be logged in to send truco action");
-      }
-      return dataSources.matchAPI.playEnvido({ matchId, userId, action });
-    }
+    joinMatch: authenticateRoute(
+      (parent, { matchId }, { userId, dataSources }) =>
+        dataSources.matchAPI.joinMatch({ matchId, userId })
+    ),
+    playCard: authenticateRoute(
+      (parent, { matchId, cardId }, { userId, dataSources }) =>
+        dataSources.matchAPI.playCard({ matchId, userId, cardId })
+    ),
+    playTruco: authenticateRoute(
+      (parent, { matchId, action }, { userId, dataSources }) =>
+        dataSources.matchAPI.playTruco({ matchId, userId, action })
+    ),
+    playEnvido: authenticateRoute(
+      (parent, { matchId, action }, { userId, dataSources }) =>
+        dataSources.matchAPI.playEnvido({ matchId, userId, action })
+    )
   },
   Subscription: {
     matchListUpdated: {
