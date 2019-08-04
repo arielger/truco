@@ -1,4 +1,8 @@
-const { getPlayersInPlayingOrder, isLastPlayerFromTeam } = require("./round");
+const {
+  getPlayersInPlayingOrder,
+  isLastPlayerFromTeam,
+  getNewRoundData
+} = require("./round");
 
 describe("Round utilities", () => {
   test("Get players in playing order", () => {
@@ -38,6 +42,26 @@ describe("Round utilities", () => {
     test("should return false if it's NOT the last player of the current hand", () => {
       expect(isLastPlayerFromTeam(mockedMatchData, "user-id-1")).toBe(false);
       expect(isLastPlayerFromTeam(mockedMatchData, "user-id-2")).toBe(false);
+    });
+  });
+
+  describe("getNewRoundData", () => {
+    test("should update the initial player for the next round", () => {
+      const newRoundData1 = getNewRoundData([1, 2, 3, 4], 0);
+      expect(newRoundData1).toHaveProperty("nextPlayer", 2);
+      expect(newRoundData1).toHaveProperty(
+        ["hands", 0, "initialPlayerIndex"],
+        1
+      );
+
+      // If in the last round the last player started
+      // it should start with the first player again
+      const newRoundData2 = getNewRoundData([1, 2, 3, 4], 3);
+      expect(newRoundData2).toHaveProperty("nextPlayer", 1);
+      expect(newRoundData2).toHaveProperty(
+        ["hands", 0, "initialPlayerIndex"],
+        0
+      );
     });
   });
 });

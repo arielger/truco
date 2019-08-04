@@ -7,11 +7,14 @@ const getPlayersInPlayingOrder = initialPlayerIndex => players => [
   ...players.slice(0, initialPlayerIndex)
 ];
 
-const getNewRoundData = playersIds => {
+const getNewRoundData = (playersIds, lastRoundInitialPlayerIndex = -1) => {
   const playersCards = R.pipe(
     R.map(({ card }) => ({ card, played: false })),
     R.splitEvery(3)
   )(pickRandom(cards, { count: playersIds.length * 3 }));
+
+  const initialPlayerIndex =
+    (lastRoundInitialPlayerIndex + 1) % playersIds.length;
 
   return {
     moves: [],
@@ -25,10 +28,10 @@ const getNewRoundData = playersIds => {
     })),
     hands: [
       {
-        initialPlayerIndex: 0
+        initialPlayerIndex
       }
     ],
-    nextPlayer: R.head(playersIds)
+    nextPlayer: playersIds[initialPlayerIndex]
   };
 };
 

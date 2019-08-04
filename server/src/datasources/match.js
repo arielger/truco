@@ -492,7 +492,12 @@ class MatchAPI extends DataSource {
             {
               $push: {
                 rounds: getNewRoundData(
-                  R.map(R.prop("id"), updatedMatch.players)
+                  R.map(R.prop("id"), updatedMatch.players),
+                  R.pipe(
+                    R.prop("hands"),
+                    R.head,
+                    R.prop("initialPlayerIndex")
+                  )(currentRound)
                 )
               }
             },
@@ -636,7 +641,12 @@ class MatchAPI extends DataSource {
             ...(trucoRejected && !matchWinner
               ? {
                   [`rounds.${currentRoundIndex + 1}`]: getNewRoundData(
-                    R.map(R.prop("data"), match.players)
+                    R.map(R.prop("data"), match.players),
+                    R.pipe(
+                      R.prop("hands"),
+                      R.head,
+                      R.prop("initialPlayerIndex")
+                    )(currentRound)
                   )
                 }
               : {}),
