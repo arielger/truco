@@ -1,12 +1,31 @@
 import React from "react";
 import * as R from "ramda";
 import cs from "classnames";
+import gql from "graphql-tag";
 
 import actionsToText from "../../../utils/actionsToText.json";
 import Card from "../../../components/Card";
 import styles from "./PlayerCards.module.scss";
 
+const PLAY_CARD = gql`
+  mutation playCard($matchId: ID!, $cardId: ID!) {
+    playCard(matchId: $matchId, cardId: $cardId) {
+      myCards {
+        id
+        card
+        played
+      }
+      cardsPlayedByPlayer {
+        playerId
+        cards
+      }
+    }
+  }
+`;
+
 export default function PlayerCards({
+  client,
+  matchId,
   player,
   position, // top, right, bottom, left
   playedCards,
@@ -17,6 +36,13 @@ export default function PlayerCards({
   handlePlayCard,
   action
 }) {
+  const playCard = cardId => {
+    client.mutate({
+      mutation: PLAY_CARD,
+      variables: { matchId, cardId }
+    });
+  };
+
   return (
     <div className={cs(styles.player, styles[position])}>
       <div className={styles.playerAvatarWrapper}>
@@ -39,7 +65,7 @@ export default function PlayerCards({
             <Card
               key={card}
               card={card}
-              onClick={() => enablePlayCards && handlePlayCard(id)}
+              onClick={() => enablePlayCards && playCard(id)}
             />
           ))}
         </div>

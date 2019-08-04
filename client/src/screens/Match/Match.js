@@ -1,6 +1,6 @@
 import React, { Fragment } from "react";
 import * as R from "ramda";
-import { Query, Mutation, withApollo } from "react-apollo";
+import { Query, withApollo } from "react-apollo";
 import { Prompt } from "react-router-dom";
 import gql from "graphql-tag";
 
@@ -78,22 +78,6 @@ const MATCH_SUBSCRIPTION = gql`
     matchUpdated(matchId: $matchId) {
       type
       ${matchFields}
-    }
-  }
-`;
-
-const PLAY_CARD = gql`
-  mutation playCard($matchId: ID!, $cardId: ID!) {
-    playCard(matchId: $matchId, cardId: $cardId) {
-      myCards {
-        id
-        card
-        played
-      }
-      cardsPlayedByPlayer {
-        playerId
-        cards
-      }
     }
   }
 `;
@@ -198,29 +182,23 @@ const MatchInner = ({
               )(data.match.cardsPlayedByPlayer)}
             />
           ))}
-          <Mutation mutation={PLAY_CARD}>
-            {playCard => (
-              <PlayerCards
-                player={user}
-                action={
-                  R.pathEq(["lastAction", "playerId"], user.id, data.match) &&
-                  data.match.lastAction.type
-                }
-                isTheirTurn={isCurrentPlayer}
-                position="bottom"
-                isCurrentUser={true}
-                enablePlayCards={
-                  !data.match.roundWinnerTeam &&
-                  data.match.nextPlayer === user.id
-                }
-                playedCards={playedCards}
-                notPlayedCards={notPlayedCards}
-                handlePlayCard={cardId =>
-                  playCard({ variables: { matchId, cardId } })
-                }
-              />
-            )}
-          </Mutation>
+          <PlayerCards
+            client={client}
+            matchId={matchId}
+            player={user}
+            action={
+              R.pathEq(["lastAction", "playerId"], user.id, data.match) &&
+              data.match.lastAction.type
+            }
+            isTheirTurn={isCurrentPlayer}
+            position="bottom"
+            isCurrentUser={true}
+            enablePlayCards={
+              !data.match.roundWinnerTeam && data.match.nextPlayer === user.id
+            }
+            playedCards={playedCards}
+            notPlayedCards={notPlayedCards}
+          />
           {data.match.matchWinnerTeam && (
             <WinnerModal
               history={history}
