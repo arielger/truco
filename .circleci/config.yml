@@ -19,4 +19,4 @@ jobs:
             - ~/.cache/yarn
       - run:
           name: Run server tests
-          command: cd server && yarn test
+          command: cd server && yarn test:ci
