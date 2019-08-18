@@ -1,0 +1,20 @@
+type AuthUser {
+  name: String!
+  email: String
+  avatar: String
+}
+
+type AuthResponse {
+  token: String
+  user: AuthUser
+}
+
+extend type Query {
+  me: Player!
+}
+
+extend type Mutation {
+  logInAsGuest: AuthResponse!
+  logInWithFacebook(accessToken: String!): AuthResponse!
+  logInWithGoogle(accessToken: String!): AuthResponse!
+}

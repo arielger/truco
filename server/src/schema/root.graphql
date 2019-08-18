@@ -1,0 +1,13 @@
+# There should be at lest one field in each type
+# https://github.com/graphql/graphql-js/issues/937
+type Query {
+  _: Boolean
+}
+
+type Mutation {
+  _: Boolean
+}
+
+type Subscription {
+  _: Boolean
+}
