@@ -5,10 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon src/index.js",
-    "test": "jest --watch",
-    "db:migrations:all": "./node_modules/.bin/sequelize db:migrate",
-    "db:migrations:undo:all": "./node_modules/.bin/sequelize db:migrate:undo:all",
-    "db:migration:create": "./node_modules/.bin/sequelize migration:generate"
+    "test": "jest --watch"
   },
   "author": "",
   "license": "ISC",
