@@ -2,15 +2,47 @@ import React from "react";
 import * as R from "ramda";
 
 import ActionsList from "./ActionsList";
-import { getEnvidoActions, getTrucoActions } from "./utils";
+import {
+  getEnvidoActions,
+  getTrucoActions,
+  getSayEnvidoActions
+} from "./utils";
 
 export default function Actions({
   client,
   match,
   matchId,
   isCurrentPlayer,
-  currentHand
+  currentHand,
+  nextEnvidoPlayer,
+  isCurrentEnvidoPlayer,
+  envidoPoints,
+  cardPlayed,
+  currentPlayerEnvidoPoints,
+  playersCount
 }) {
+  if (nextEnvidoPlayer && !isCurrentEnvidoPlayer) {
+    return null;
+  }
+
+  if (isCurrentEnvidoPlayer) {
+    const sayEnvidoActions = getSayEnvidoActions({
+      envidoPoints,
+      cardPlayed,
+      currentPlayerEnvidoPoints,
+      playersCount
+    });
+
+    return (
+      <ActionsList
+        matchId={matchId}
+        client={client}
+        envidoPoints={currentPlayerEnvidoPoints}
+        sayEnvidoActions={sayEnvidoActions}
+      />
+    );
+  }
+
   const { envidoOpponentAction, envidoActions } = getEnvidoActions(
     match,
     isCurrentPlayer,

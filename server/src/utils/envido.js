@@ -1,7 +1,4 @@
 const R = require("ramda");
-const { getPlayersInPlayingOrder } = require("./round");
-
-const mapIndexed = R.addIndex(R.map);
 
 const isValidEnvidoAction = ({ action, roundEnvido }) => {
   const currentStatus = R.prop("status", roundEnvido);
@@ -75,18 +72,34 @@ const assocEnvidoStatus = userId => match => {
   const lastRound = R.last(match.rounds);
   const envido = R.prop("envido", lastRound);
 
-  return R.ifElse(
-    () =>
+  return R.pipe(
+    R.ifElse(
+      () =>
+        R.pipe(
+          R.propOr([], "list"),
+          R.length
+        )(envido),
+      R.assoc("envido", {
+        ...envido,
+        team:
+          R.prop("isFromFirstTeam", envido) === isFromFirstTeam ? "we" : "them"
+      }),
+      R.dissoc("envido")
+    ),
+    R.assoc("nextPlayerEnvido", R.prop("nextPlayerEnvido", lastRound)),
+    R.assoc(
+      "envidoPoints",
       R.pipe(
-        R.propOr([], "list"),
-        R.length
-      )(envido),
-    R.assoc("envido", {
-      ...envido,
-      team:
-        R.prop("isFromFirstTeam", envido) === isFromFirstTeam ? "we" : "them"
-    }),
-    R.dissoc("envido")
+        R.propOr([], "envidoPoints"),
+        R.map(playerEnvido =>
+          R.assoc(
+            "team",
+            playerEnvido.isFromFirstTeam === isFromFirstTeam ? "we" : "them",
+            playerEnvido
+          )
+        )
+      )(lastRound)
+    )
   )(match);
 };
 
@@ -120,27 +133,17 @@ const getEnvidoFromPlayer = cards => {
   )(cards);
 };
 
-const getEnvidoWinnerTeam = round => {
-  const pointsByPlayer = mapIndexed((cardsByPlayer, index) =>
-    R.pipe(
-      R.prop("cards"),
-      R.map(R.prop("card")),
-      getEnvidoFromPlayer,
-      points => ({ points, isFromFirstTeam: Boolean(index % 2 === 0) })
-    )(cardsByPlayer)
-  )(round.cardsByPlayer);
-
-  const initialPlayerIndex = R.path(["hands", 0, "initialPlayerIndex"])(round);
-  const bestScore = Math.max(...R.map(R.prop("points"), pointsByPlayer));
-
-  const isFirstTeamWinner = R.pipe(
-    getPlayersInPlayingOrder(initialPlayerIndex),
-    // Find first player with biggest score (ordered by playing ordered)
-    R.find(R.propEq("points", bestScore)),
-    R.prop("isFromFirstTeam")
-  )(pointsByPlayer);
-
-  return isFirstTeamWinner ? "first" : "second";
+const getEnvidoWinnerTeam = envidoByPlayer => {
+  return R.pipe(
+    R.pluck("points"),
+    points => {
+      const maxPoints = Math.max(...points.filter(Boolean)); // Remove undefined values
+      const winnerPlayerIndex = R.findIndex(R.equals(maxPoints), points);
+      const isWinnerFromFirstTeam =
+        envidoByPlayer[winnerPlayerIndex].isFromFirstTeam;
+      return isWinnerFromFirstTeam ? "first" : "second";
+    }
+  )(envidoByPlayer);
 };
 
 module.exports = {

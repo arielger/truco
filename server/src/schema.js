@@ -74,8 +74,21 @@ const typeDefs = gql`
   }
 
   type Action {
-    playerId: ID
-    type: String
+    playerId: ID!
+    type: String!
+    points: Int
+  }
+
+  enum sayEnvidoMoveType {
+    POINTS
+    CANT_WIN
+  }
+
+  type playerEnvidoPoints {
+    playerId: ID!
+    moveType: sayEnvidoMoveType!
+    team: Team!
+    points: Int
   }
 
   type PlayerMatch {
@@ -90,6 +103,8 @@ const typeDefs = gql`
     theirPoints: Int
     truco: Truco
     envido: Envido
+    nextPlayerEnvido: ID
+    envidoPoints: [playerEnvidoPoints]
     lastAction: Action
   }
 
@@ -126,6 +141,8 @@ const typeDefs = gql`
     theirPoints: Int
     truco: Truco
     envido: Envido
+    nextPlayerEnvido: ID
+    envidoPoints: [playerEnvidoPoints]
     lastAction: Action
   }
 
@@ -169,6 +186,13 @@ const typeDefs = gql`
      REJECT
    }
 
+   enum SayEnvidoActions {
+     TABLE
+     POINTS
+     CANT_WIN
+     N_ARE_MORE
+   }
+
   type MatchUpdateResponse {
     success: Boolean!
     message: String
@@ -184,6 +208,7 @@ const typeDefs = gql`
     playCard(matchId: ID!, cardId: ID!): PlayerMatch!
     playTruco(matchId: ID!, action: TrucoActions!): MatchUpdateResponse!
     playEnvido(matchId: ID!, action: EnvidoActions!): MatchUpdateResponse!
+    sayEnvido(matchId: ID!, action: SayEnvidoActions!): MatchUpdateResponse!
   }
 
   type Subscription {

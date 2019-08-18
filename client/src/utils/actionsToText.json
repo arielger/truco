@@ -6,5 +6,9 @@
   "VALE_CUATRO": "Vale cuatro",
   "ENVIDO": "Envido",
   "REAL_ENVIDO": "Real envido",
-  "FALTA_ENVIDO": "Falta envido"
+  "FALTA_ENVIDO": "Falta envido",
+  "POINTS": "Tengo {{points}}",
+  "CANT_WIN": "Son buenas",
+  "TABLE": "Mesa",
+  "N_ARE_MORE": "{{points}} son mejores"
 }

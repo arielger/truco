@@ -133,7 +133,32 @@ const roundSchema = new mongoose.Schema({
       type: Boolean,
       required: true
     }
-  }
+  },
+  nextPlayerEnvido: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
+  envidoPoints: [
+    {
+      playerId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+      },
+      isFromFirstTeam: {
+        type: Boolean,
+        required: true
+      },
+      moveType: {
+        type: String,
+        enum: ["POINTS", "CANT_WIN"]
+      },
+      points: {
+        type: Number
+      }
+    }
+  ]
 });
 
 roundSchema.set("toObject", {

@@ -99,3 +99,28 @@ export const getEnvidoActions = (match, isCurrentPlayer, currentHand) => {
     [R.T, R.always({})]
   ])(R.propOr({}, "envido", match));
 };
+
+export const getSayEnvidoActions = ({
+  envidoPoints,
+  cardPlayed,
+  currentPlayerEnvidoPoints,
+  playersCount
+}) => {
+  const maxOponentEnvidoPoints = R.pipe(
+    R.filter(R.propEq("team", "them")),
+    R.pluck("points"),
+    points => Math.max(...points),
+    R.defaultTo(0)
+  )(envidoPoints);
+
+  const isLastPlayer = envidoPoints.length + 1 === playersCount;
+
+  if (currentPlayerEnvidoPoints > maxOponentEnvidoPoints && isLastPlayer)
+    return ["N_ARE_MORE"];
+
+  if (currentPlayerEnvidoPoints <= maxOponentEnvidoPoints) {
+    return ["CANT_WIN"];
+  }
+
+  return ["POINTS", ...(cardPlayed ? ["TABLE"] : [])];
+};

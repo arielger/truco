@@ -21,7 +21,8 @@ const {
   isValidEnvidoAction,
   getRoundEnvidoPoints,
   assocEnvidoStatus,
-  getEnvidoWinnerTeam
+  getEnvidoWinnerTeam,
+  getEnvidoFromPlayer
 } = require("../utils/envido");
 
 const Match = mongoose.model("Match");
@@ -761,8 +762,6 @@ class MatchAPI extends DataSource {
         isAccepted
       });
 
-    const envidoWinnerTeam = isAccepted && getEnvidoWinnerTeam(currentRound);
-
     const newEnvidoList = ["ACCEPT", "REJECT"].includes(action)
       ? roundEnvido.list
       : roundEnvido.list.concat(action);
@@ -772,6 +771,13 @@ class MatchAPI extends DataSource {
       [R.equals("REJECT"), R.always("REJECTED")],
       [R.T, R.always("PENDING")]
     ])(action);
+
+    const firstRoundPlayer = R.pipe(
+      R.prop("hands"),
+      R.head,
+      R.prop("initialPlayerIndex"),
+      playerIndex => match.players.map(p => p.data)[playerIndex]
+    )(currentRound);
 
     const updatedMatch = R.pipe(
       match => match.toObject(),
@@ -787,7 +793,10 @@ class MatchAPI extends DataSource {
               list: newEnvidoList,
               status: newStatus,
               isFromFirstTeam
-            }
+            },
+            ...(isAccepted && {
+              [`rounds.${currentRoundIndex}.nextPlayerEnvido`]: firstRoundPlayer
+            })
           },
           ...(isRejected && {
             $inc: {
@@ -795,8 +804,140 @@ class MatchAPI extends DataSource {
                 ? "pointsSecondTeam"
                 : "pointsFirstTeam"]: envidoPoints
             }
-          }),
-          ...(isAccepted && {
+          })
+        },
+        { new: true }
+      )
+        .populate("creator")
+        .populate("players.data")
+    );
+
+    updatedMatch.players.forEach(player => {
+      const result = {
+        userId: player.id,
+        matchUpdated: {
+          ...R.pipe(
+            assocCurrentPlayerCards(player.id),
+            assocPoints(player.id),
+            assocRoundWinnerTeam(player.id),
+            assocTrucoStatus(player.id),
+            assocEnvidoStatus(player.id),
+            assocIsLastPlayerFromTeam(player.id)
+          )(updatedMatch),
+          type: events.ENVIDO_ACTION,
+          lastAction: {
+            playerId: userId,
+            type: action
+          }
+        }
+      };
+      pubsub.publish(events.ENVIDO_ACTION, result);
+    });
+
+    return {
+      success: true,
+      message: "Match updated successfully"
+    };
+  }
+
+  async sayEnvido({ matchId, userId, action }) {
+    const match = await Match.findById(matchId);
+
+    const actionError = validateMatchAction(matchId, match, userId);
+
+    if (actionError) {
+      throw new Error(actionError);
+    }
+
+    const currentRound = R.last(match.rounds);
+    const roundEnvido = R.prop("envido")(currentRound);
+    const currentRoundIndex = match.rounds.length - 1;
+
+    if (!currentRound.nextPlayerEnvido.equals(userId)) {
+      throw new Error("It's not your turn for saying your envido points.");
+    }
+
+    if (!R.pathEq(["envido", "status"], "ACCEPTED", currentRound)) {
+      throw new Error("Envido is not accepted yet, you can't say your points.");
+    }
+
+    const tablePoints =
+      action === "TABLE" &&
+      R.pipe(
+        R.prop("cardsPlayedByPlayer"),
+        R.find(cardsByPlayer => cardsByPlayer.playerId.equals(userId)),
+        R.prop("cards"),
+        R.pluck("card"),
+        cards => getEnvidoFromPlayer(cards)
+      )(currentRound);
+
+    const playerEnvidoPoints =
+      ["POINTS", "N_ARE_MORE"].includes(action) &&
+      R.pipe(
+        R.prop("cardsByPlayer"),
+        R.find(player => player.playerId.equals(userId)),
+        R.prop("cards"),
+        R.pluck("card"),
+        cards => getEnvidoFromPlayer(cards)
+      )(currentRound);
+
+    const currentPlayerEnvidoPoints = tablePoints || playerEnvidoPoints;
+
+    const playersIds = R.map(player => player.data.toString(), match.players);
+    const playerIndex = R.findIndex(R.equals(userId))(playersIds);
+    const nextPlayerIndex =
+      playerIndex + 1 === match.players.length ? 0 : playerIndex + 1;
+    const nextPlayerId = playersIds[nextPlayerIndex];
+
+    const isFromFirstTeam = R.pipe(
+      R.find(player => player.data.equals(userId)),
+      R.prop("isFromFirstTeam")
+    )(match.players);
+    const isLastPlayer =
+      currentRound.envidoPoints.length + 1 === match.playersCount;
+
+    const envidoPoints =
+      isLastPlayer &&
+      getRoundEnvidoPoints({
+        envidoList: R.propOr([], "list", roundEnvido),
+        pointsFirstTeam: match.pointsFirstTeam,
+        pointsSecondTeam: match.pointsSecondTeam,
+        isAccepted: true
+      });
+
+    const currentPlayerEnvido = {
+      playerId: userId,
+      moveType: ["TABLE", "POINTS", "N_ARE_MORE"].includes(action)
+        ? "POINTS"
+        : "CANT_WIN",
+      isFromFirstTeam,
+      ...(typeof currentPlayerEnvidoPoints === "number"
+        ? { points: currentPlayerEnvidoPoints }
+        : {})
+    };
+
+    const envidoWinnerTeam =
+      isLastPlayer &&
+      getEnvidoWinnerTeam([...currentRound.envidoPoints, currentPlayerEnvido]);
+
+    const updatedMatch = R.pipe(
+      match => match.toObject(),
+      formatMatch,
+      assocCardsPlayedByPlayers,
+      assocNextPlayer
+    )(
+      await Match.findByIdAndUpdate(
+        matchId,
+        {
+          $set: {
+            [`rounds.${currentRoundIndex}.nextPlayerEnvido`]: isLastPlayer
+              ? undefined
+              : nextPlayerId
+          },
+          $push: {
+            [`rounds.${currentRoundIndex}.envidoPoints`]: currentPlayerEnvido
+          },
+          ...(isLastPlayer && {
             $inc: {
               [envidoWinnerTeam === "first"
                 ? "pointsFirstTeam"
@@ -825,7 +966,10 @@ class MatchAPI extends DataSource {
           type: events.ENVIDO_ACTION,
           lastAction: {
             playerId: userId,
-            type: action
+            type: action,
+            ...(typeof currentPlayerEnvidoPoints === "number"
+              ? { points: currentPlayerEnvidoPoints }
+              : {})
           }
         }
       };

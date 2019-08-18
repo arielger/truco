@@ -23,17 +23,34 @@ const PLAY_ENVIDO = gql`
   }
 `;
 
+const SAY_ENVIDO = gql`
+  mutation sayEnvido($matchId: ID!, $action: SayEnvidoActions!) {
+    sayEnvido(matchId: $matchId, action: $action) {
+      success
+      message
+    }
+  }
+`;
+
+const getMutation = {
+  truco: PLAY_TRUCO,
+  envido: PLAY_ENVIDO,
+  sayEnvido: SAY_ENVIDO
+};
+
 export default function ActionsList({
   matchId,
   client,
   ourAction,
   theirAction,
+  sayEnvidoActions = [],
+  envidoPoints,
   envidoActions = [],
   trucoActions = []
 }) {
-  const playAction = (action, type) => {
+  const playAction = (type, action) => {
     client.mutate({
-      mutation: type === "truco" ? PLAY_TRUCO : PLAY_ENVIDO,
+      mutation: getMutation[type],
       variables: { matchId, action }
     });
   };
@@ -56,13 +73,26 @@ export default function ActionsList({
           </div>
         </>
       )}
+      {sayEnvidoActions && sayEnvidoActions.length > 0 && (
+        <div className={styles.actionsType}>
+          {sayEnvidoActions.map(action => (
+            <button
+              key={action}
+              className={styles.action}
+              onClick={() => playAction("sayEnvido", action)}
+            >
+              {actionsToText[action].replace("{{points}}", envidoPoints)}
+            </button>
+          ))}
+        </div>
+      )}
       {envidoActions && envidoActions.length > 0 && (
         <div className={styles.actionsType}>
           {envidoActions.map(action => (
             <button
               key={action}
               className={styles.action}
-              onClick={() => playAction(action, "envido")}
+              onClick={() => playAction("envido", action)}
             >
               {actionsToText[action]}
             </button>
@@ -78,7 +108,7 @@ export default function ActionsList({
             <button
               key={action}
               className={styles.action}
-              onClick={() => playAction(action, "truco")}
+              onClick={() => playAction("truco", action)}
             >
               {actionsToText[action]}
             </button>

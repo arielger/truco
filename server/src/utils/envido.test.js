@@ -143,108 +143,69 @@ describe("Envido utilities", () => {
   });
 
   describe("Get envido winner team", () => {
-    test.only("Get envido winner team", () => {
+    test("Get envido winner team", () => {
       expect(
-        getEnvidoWinnerTeam({
-          hands: [
-            {
-              initialPlayerIndex: 0
-            }
-          ],
-          cardsByPlayer: [
-            {
-              playerId: "player-1",
-              cards: [
-                { card: "5-GOLD" },
-                { card: "12-GOLD" },
-                { card: "12-BASTO" }
-              ]
-            },
-            {
-              playerId: "player-2",
-              cards: [
-                { card: "10-GOLD" },
-                { card: "11-GOLD" },
-                { card: "12-BASTO" }
-              ]
-            }
-          ]
-        })
+        getEnvidoWinnerTeam([
+          {
+            playerId: "1",
+            isFromFirstTeam: true,
+            moveType: "POINTS",
+            points: 28
+          },
+          {
+            playerId: "1",
+            isFromFirstTeam: false,
+            moveType: "POINTS",
+            points: 33
+          }
+        ])
+      ).toBe("second");
+
+      expect(
+        getEnvidoWinnerTeam([
+          {
+            playerId: "1",
+            isFromFirstTeam: false,
+            moveType: "POINTS",
+            points: 4
+          },
+          {
+            playerId: "2",
+            isFromFirstTeam: true,
+            moveType: "CANT_WIN"
+          },
+          {
+            playerId: "3",
+            isFromFirstTeam: false,
+            moveType: "POINTS",
+            points: 24
+          },
+          {
+            playerId: "4",
+            isFromFirstTeam: true,
+            moveType: "POINTS",
+            points: 28
+          }
+        ])
       ).toBe("first");
 
-      // Should take into account who is the initial player
-      // (if both players have the same envido score)
+      // If same points => should win the first
       expect(
-        getEnvidoWinnerTeam({
-          hands: [
-            {
-              initialPlayerIndex: 1
-            }
-          ],
-          cardsByPlayer: [
-            {
-              playerId: "player-1",
-              cards: [
-                { card: "6-GOLD" },
-                { card: "7-GOLD" },
-                { card: "12-BASTO" }
-              ]
-            },
-            {
-              playerId: "player-2",
-              cards: [
-                { card: "6-SWORD" },
-                { card: "7-SWORD" },
-                { card: "12-GOLD" }
-              ]
-            }
-          ]
-        })
-      ).toBe("second");
-
-      expect(
-        getEnvidoWinnerTeam({
-          hands: [
-            {
-              initialPlayerIndex: 0
-            }
-          ],
-          cardsByPlayer: [
-            {
-              playerId: "player-1",
-              cards: [
-                { card: "10-GOLD" },
-                { card: "11-CUP" },
-                { card: "12-BASTO" }
-              ]
-            },
-            {
-              playerId: "player-2",
-              cards: [
-                { card: "10-GOLD" },
-                { card: "11-GOLD" },
-                { card: "12-BASTO" }
-              ]
-            },
-            {
-              playerId: "player-3",
-              cards: [
-                { card: "3-SWORD" },
-                { card: "4-SWORD" },
-                { card: "12-BASTO" }
-              ]
-            },
-            {
-              playerId: "player-4", // <- Winner player (score of 33)
-              cards: [
-                { card: "6-SWORD" },
-                { card: "7-SWORD" },
-                { card: "12-BASTO" }
-              ]
-            }
-          ]
-        })
-      ).toBe("second");
+        getEnvidoWinnerTeam([
+          {
+            playerId: "1",
+            isFromFirstTeam: true,
+            moveType: "POINTS",
+            points: 33
+          },
+          {
+            playerId: "2",
+            isFromFirstTeam: false,
+            moveType: "POINTS",
+            points: 33
+          }
+        ])
+      ).toBe("first");
     });
   });
 });

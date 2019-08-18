@@ -64,4 +64,14 @@ storiesOf("Actions", module)
     <Wrapper>
       <ActionsList ourAction="TRUCO" />
     </Wrapper>
+  ))
+  .add("say envido can't win", () => (
+    <Wrapper>
+      <ActionsList sayEnvidoActions={["CANT_WIN"]} />
+    </Wrapper>
+  ))
+  .add("say envido points", () => (
+    <Wrapper>
+      <ActionsList sayEnvidoActions={["POINTS"]} envidoPoints={33} />
+    </Wrapper>
   ));

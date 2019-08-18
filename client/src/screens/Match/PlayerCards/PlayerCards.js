@@ -53,7 +53,13 @@ export default function PlayerCards({
           src={player.avatar}
           alt=""
         />
-        {action && <div className={styles.action}>{actionsToText[action]}</div>}
+        {action.type && (
+          <div className={styles.action}>
+            {["POINTS", "N_ARE_MORE"]
+              ? actionsToText[action.type].replace("{{points}}", action.points)
+              : actionsToText[action.type]}
+          </div>
+        )}
       </div>
       {isCurrentUser ? (
         <div

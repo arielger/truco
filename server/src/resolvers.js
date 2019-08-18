@@ -75,6 +75,10 @@ module.exports = {
     playEnvido: authenticateRoute(
       (parent, { matchId, action }, { userId, dataSources }) =>
         dataSources.matchAPI.playEnvido({ matchId, userId, action })
+    ),
+    sayEnvido: authenticateRoute(
+      (parent, { matchId, action }, { userId, dataSources }) =>
+        dataSources.matchAPI.sayEnvido({ matchId, userId, action })
     )
   },
   Subscription: {

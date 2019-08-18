@@ -12,6 +12,8 @@ import Scores from "./Scores";
 import Actions from "./Actions";
 import WinnerModal from "./WinnerModal";
 
+import { getEnvidoFromPlayer } from "../../utils/envido";
+
 const JOIN_MATCH = gql`
   mutation joinMatch($matchId: ID!) {
     joinMatch(matchId: $matchId) {
@@ -59,9 +61,17 @@ const matchFields = `
     status
     team
   }
+  nextPlayerEnvido
+  envidoPoints {
+    playerId
+    moveType
+    points
+    team
+  }
   lastAction {
     playerId
     type
+    points
   }
 `;
 
@@ -119,6 +129,11 @@ const MatchInner = ({
 
   const isCurrentPlayer = data.match.nextPlayer === user.id;
 
+  const isCurrentEnvidoPlayer = data.match.nextPlayerEnvido === user.id;
+  const currentPlayerEnvidoPoints =
+    isCurrentEnvidoPlayer &&
+    getEnvidoFromPlayer(data.match.myCards.map(({ card }) => card));
+
   const otherPlayers = R.reject(R.propEq("id", user.id), data.match.players);
 
   return (
@@ -160,6 +175,12 @@ const MatchInner = ({
             match={data.match}
             matchId={matchId}
             isCurrentPlayer={isCurrentPlayer}
+            nextEnvidoPlayer={data.match.nextPlayerEnvido}
+            isCurrentEnvidoPlayer={isCurrentEnvidoPlayer}
+            envidoPoints={data.match.envidoPoints}
+            cardPlayed={!!playedCards.length}
+            currentPlayerEnvidoPoints={currentPlayerEnvidoPoints}
+            playersCount={data.match.playersCount}
             currentHand={currentHand}
           />
           <PlayedCards
@@ -171,10 +192,14 @@ const MatchInner = ({
               key={player.id}
               action={
                 R.pathEq(["lastAction", "playerId"], player.id, data.match) &&
-                data.match.lastAction.type
+                data.match.lastAction
               }
               player={player}
-              isTheirTurn={player.id === data.match.nextPlayer}
+              isTheirTurn={
+                data.match.nextPlayerEnvido
+                  ? player.id === data.match.nextPlayerEnvido
+                  : player.id === data.match.nextPlayer
+              }
               position="top" //@todo: Refactor to handle 4 and 6 players
               playedCards={R.pipe(
                 R.find(R.propEq("playerId", player.id)),
@@ -190,11 +215,17 @@ const MatchInner = ({
               R.pathEq(["lastAction", "playerId"], user.id, data.match) &&
               data.match.lastAction.type
             }
-            isTheirTurn={isCurrentPlayer}
+            isTheirTurn={
+              data.match.nextPlayerEnvido
+                ? isCurrentEnvidoPlayer
+                : isCurrentPlayer
+            }
             position="bottom"
             isCurrentUser={true}
             enablePlayCards={
-              !data.match.roundWinnerTeam && data.match.nextPlayer === user.id
+              !data.match.roundWinnerTeam &&
+              data.match.nextPlayer === user.id &&
+              !data.match.nextPlayerEnvido
             }
             playedCards={playedCards}
             notPlayedCards={notPlayedCards}
