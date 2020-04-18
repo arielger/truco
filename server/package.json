@@ -4,8 +4,7 @@
   "description": "Multiplayer truco game made with GraphQL server + React.js SPA",
   "main": "index.js",
   "engines": {
-    "node": ">= 12.16.1",
-    "yarn": "1.15.2"
+    "node": ">= 12.16.1"
   },
   "scripts": {
     "start": "nodemon src/index.js",
