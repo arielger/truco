@@ -2,9 +2,9 @@ const R = require("ramda");
 const pickRandom = require("pick-random");
 const { cards } = require("./cards");
 
-const getPlayersInPlayingOrder = initialPlayerIndex => players => [
+const getPlayersInPlayingOrder = (initialPlayerIndex) => (players) => [
   ...players.slice(initialPlayerIndex),
-  ...players.slice(0, initialPlayerIndex)
+  ...players.slice(0, initialPlayerIndex),
 ];
 
 const getNewRoundData = (playersIds, lastRoundInitialPlayerIndex = -1) => {
@@ -20,18 +20,18 @@ const getNewRoundData = (playersIds, lastRoundInitialPlayerIndex = -1) => {
     moves: [],
     cardsByPlayer: playersIds.map((playerId, i) => ({
       playerId,
-      cards: playersCards[i]
+      cards: playersCards[i],
     })),
-    cardsPlayedByPlayer: playersIds.map(playerId => ({
+    cardsPlayedByPlayer: playersIds.map((playerId) => ({
       playerId,
-      cards: []
+      cards: [],
     })),
     hands: [
       {
-        initialPlayerIndex
-      }
+        initialPlayerIndex,
+      },
     ],
-    nextPlayer: playersIds[initialPlayerIndex]
+    nextPlayer: playersIds[initialPlayerIndex],
   };
 };
 
@@ -41,15 +41,15 @@ const isTeamWinner = (handsResults, team, isFirstTeam) =>
     R.pipe(
       R.filter(R.equals(team)),
       R.length,
-      winningRounds => winningRounds >= 2
+      (winningRounds) => winningRounds >= 2
     ),
     // If there is one tie and won 1 hand
     R.both(R.find(R.equals("tie")), R.find(R.equals(team))),
     // If it's the first team and all hands are a tie
-    R.both(R.always(isFirstTeam), R.equals(["tie", "tie", "tie"]))
+    R.both(R.always(isFirstTeam), R.equals(["tie", "tie", "tie"])),
   ])(handsResults);
 
-const getRoundWinnerTeam = handsResults => {
+const getRoundWinnerTeam = (handsResults) => {
   if (isTeamWinner(handsResults, "first", true)) {
     return "first";
   }
@@ -59,18 +59,23 @@ const getRoundWinnerTeam = handsResults => {
   return false;
 };
 
-const getMatchWinnerTeam = (match, roundWinnerTeam, trucoPoints) => {
+const getMatchWinnerTeam = (
+  match,
+  roundWinnerTeam,
+  trucoPoints = 0,
+  envidoPoints = 0
+) => {
   const { pointsFirstTeam, pointsSecondTeam } = match;
 
   if (
     roundWinnerTeam === "first" &&
-    pointsFirstTeam + trucoPoints >= match.points
+    pointsFirstTeam + trucoPoints + envidoPoints >= match.points
   ) {
     return "first";
   }
   if (
     roundWinnerTeam === "second" &&
-    pointsSecondTeam + trucoPoints >= match.points
+    pointsSecondTeam + trucoPoints + envidoPoints >= match.points
   ) {
     return "second";
   }
@@ -80,16 +85,12 @@ const getMatchWinnerTeam = (match, roundWinnerTeam, trucoPoints) => {
 const isLastPlayerFromTeam = (match, userId) => {
   if (!match.rounds.length) return false;
 
-  const currentHand = R.pipe(
-    R.last,
-    R.prop("hands"),
-    R.last
-  )(match.rounds);
+  const currentHand = R.pipe(R.last, R.prop("hands"), R.last)(match.rounds);
 
   return R.pipe(
     getPlayersInPlayingOrder(currentHand.initialPlayerIndex),
     // Get only last player from each team
-    players => players.slice(-2),
+    (players) => players.slice(-2),
     R.map(({ id, data }) => (data ? data.toString() : id)),
     R.includes(userId)
   )(match.players);
@@ -100,5 +101,5 @@ module.exports = {
   getNewRoundData,
   getRoundWinnerTeam,
   getMatchWinnerTeam,
-  isLastPlayerFromTeam
+  isLastPlayerFromTeam,
 };

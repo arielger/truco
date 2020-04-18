@@ -2,7 +2,7 @@ const { withFilter, AuthenticationError } = require("apollo-server");
 
 const { pubsub, events } = require("./subscriptions");
 
-const authenticateRoute = next => (parent, args, context) => {
+const authenticateRoute = (next) => (parent, args, context) => {
   if (!context.userId) {
     throw new AuthenticationError(
       "You must be logged in to perform this action"
@@ -21,7 +21,7 @@ module.exports = {
     ),
     me: authenticateRoute((parent, args, { userId, dataSources }) =>
       dataSources.userAPI.getUserInfo({ userId })
-    )
+    ),
   },
   Mutation: {
     createMatch: authenticateRoute(
@@ -37,12 +37,12 @@ module.exports = {
     ) => {
       req.body = {
         ...req.body,
-        access_token: accessToken
+        access_token: accessToken,
       };
 
       return dataSources.userAPI.logInWithFacebook({
         req,
-        res
+        res,
       });
     },
     logInWithGoogle: async (
@@ -52,12 +52,12 @@ module.exports = {
     ) => {
       req.body = {
         ...req.body,
-        access_token: accessToken
+        access_token: accessToken,
       };
 
       return dataSources.userAPI.logInWithGoogle({
         req,
-        res
+        res,
       });
     },
     joinMatch: authenticateRoute(
@@ -79,7 +79,11 @@ module.exports = {
     sayEnvido: authenticateRoute(
       (parent, { matchId, action }, { userId, dataSources }) =>
         dataSources.matchAPI.sayEnvido({ matchId, userId, action })
-    )
+    ),
+    leaveRound: authenticateRoute(
+      (parent, { matchId }, { userId, dataSources }) =>
+        dataSources.matchAPI.leaveRound({ matchId, userId })
+    ),
   },
   Subscription: {
     matchListUpdated: {
@@ -87,8 +91,8 @@ module.exports = {
         pubsub.asyncIterator([
           events.MATCH_ADDED,
           events.MATCH_UPDATED,
-          events.MATCH_REMOVED
-        ])
+          events.MATCH_REMOVED,
+        ]),
     },
     matchUpdated: {
       subscribe: withFilter(
@@ -99,7 +103,8 @@ module.exports = {
             events.NEW_MOVE,
             events.NEW_ROUND,
             events.TRUCO_ACTION,
-            events.ENVIDO_ACTION
+            events.ENVIDO_ACTION,
+            events.LEAVE_ROUND,
           ]),
         (payload, variables, context) => {
           const isSubscribedToMatch =
@@ -110,7 +115,7 @@ module.exports = {
             : true;
           return isSubscribedToMatch && isUpdateForUser;
         }
-      )
-    }
-  }
+      ),
+    },
+  },
 };

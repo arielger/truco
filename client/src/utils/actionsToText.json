@@ -10,5 +10,6 @@
   "POINTS": "Tengo {{points}}",
   "CANT_WIN": "Son buenas",
   "TABLE": "Mesa",
-  "N_ARE_MORE": "{{points}} son mejores"
+  "N_ARE_MORE": "{{points}} son mejores",
+  "LEAVE_ROUND": "Irse al mazo"
 }

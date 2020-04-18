@@ -118,7 +118,11 @@ const MatchInner = ({
     R.includes(user.id)
   )(data.match.players);
 
-  const notPlayedCards = R.reject(R.prop("played"), data.match.myCards);
+  const notPlayedCards = R.pipe(
+    R.propOr([], "myCards"),
+    R.reject(R.prop("played"))
+  )(data.match)
+  
   const playedCards = R.pipe(
     R.find(R.propEq("playerId", user.id)),
     R.prop("cards"),

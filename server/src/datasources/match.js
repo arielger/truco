@@ -10,45 +10,42 @@ const {
   getNewRoundData,
   getRoundWinnerTeam,
   getMatchWinnerTeam,
-  isLastPlayerFromTeam
+  isLastPlayerFromTeam,
 } = require("../utils/round");
 const {
   isValidTrucoAction,
   getRoundTrucoPoints,
-  assocTrucoStatus
+  assocTrucoStatus,
 } = require("../utils/truco");
 const {
   isValidEnvidoAction,
   getRoundEnvidoPoints,
   assocEnvidoStatus,
   getEnvidoWinnerTeam,
-  getEnvidoFromPlayer
+  getEnvidoFromPlayer,
 } = require("../utils/envido");
 
 const Match = mongoose.model("Match");
 
-const isOdd = R.pipe(
-  R.modulo(R.__, 2),
-  Boolean
-);
+const isOdd = R.pipe(R.modulo(R.__, 2), Boolean);
 
 const formatMatch = R.evolve({
-  players: R.map(({ data, ...other }) => ({ ...other, ...data }))
+  players: R.map(({ data, ...other }) => ({ ...other, ...data })),
 });
 
-const assocCurrentPlayerCards = userId => match =>
+const assocCurrentPlayerCards = (userId) => (match) =>
   R.assoc(
     "myCards",
     R.pipe(
       R.last,
       R.propOr([], "cardsByPlayer"),
-      R.find(cardsByPlayer => cardsByPlayer.playerId.equals(userId)),
+      R.find((cardsByPlayer) => cardsByPlayer.playerId.equals(userId)),
       R.propOr([], "cards"),
       R.map(({ _id, ...cardData }) => ({ ...cardData, id: _id }))
     )(match.rounds)
   )(match);
 
-const assocCardsPlayedByPlayers = match =>
+const assocCardsPlayedByPlayers = (match) =>
   R.assoc(
     "cardsPlayedByPlayer",
     R.pipe(
@@ -56,24 +53,21 @@ const assocCardsPlayedByPlayers = match =>
       R.propOr([], "cardsPlayedByPlayer"),
       R.map(({ playerId, cards }) => ({
         playerId,
-        cards: R.map(R.prop("card"))(cards)
+        cards: R.map(R.prop("card"))(cards),
       }))
     )(match.rounds)
   )(match);
 
-const assocNextPlayer = match =>
+const assocNextPlayer = (match) =>
   R.assoc(
     "nextPlayer",
-    R.pipe(
-      R.last,
-      R.prop("nextPlayer")
-    )(match.rounds)
+    R.pipe(R.last, R.prop("nextPlayer"))(match.rounds)
   )(match);
 
-const assocIsLastPlayerFromTeam = userId => match =>
+const assocIsLastPlayerFromTeam = (userId) => (match) =>
   R.assoc("isLastPlayerFromTeam", isLastPlayerFromTeam(match, userId), match);
 
-const assocPoints = userId => match => {
+const assocPoints = (userId) => (match) => {
   const { players, pointsFirstTeam, pointsSecondTeam } = match;
   const isUserFromFirstTeam = R.pipe(
     R.find(R.propEq("id", userId)),
@@ -91,17 +85,14 @@ const assocPoints = userId => match => {
   )(match);
 };
 
-const assocRoundWinnerTeam = userId => match => {
+const assocRoundWinnerTeam = (userId) => (match) => {
   const { players } = match;
   const userTeam = R.pipe(
     R.find(R.propEq("id", userId)),
     R.prop("isFromFirstTeam"),
-    isFromFirstTeam => (isFromFirstTeam ? "first" : "second")
+    (isFromFirstTeam) => (isFromFirstTeam ? "first" : "second")
   )(players);
-  const roundWinnerTeam = R.pipe(
-    R.last,
-    R.prop("winner")
-  )(match.rounds);
+  const roundWinnerTeam = R.pipe(R.last, R.prop("winner"))(match.rounds);
 
   return R.assoc(
     "roundWinnerTeam",
@@ -109,12 +100,12 @@ const assocRoundWinnerTeam = userId => match => {
   )(match);
 };
 
-const assocMatchWinnerTeam = userId => match => {
+const assocMatchWinnerTeam = (userId) => (match) => {
   const { players } = match;
   const userTeam = R.pipe(
     R.find(R.propEq("id", userId)),
     R.prop("isFromFirstTeam"),
-    isFromFirstTeam => (isFromFirstTeam ? "first" : "second")
+    (isFromFirstTeam) => (isFromFirstTeam ? "first" : "second")
   )(players);
 
   return R.assoc(
@@ -136,7 +127,7 @@ const validateMatchAction = (matchId, match, userId) => {
 
   if (
     !R.pipe(
-      R.map(player => player.data.toString()),
+      R.map((player) => player.data.toString()),
       R.includes(userId)
     )(match.players)
   ) {
@@ -150,15 +141,10 @@ class MatchAPI extends DataSource {
   }
 
   async getAllMatches({ userId }) {
-    return R.map(
-      R.pipe(
-        match => match.toObject(),
-        formatMatch
-      )
-    )(
+    return R.map(R.pipe((match) => match.toObject(), formatMatch))(
       await Match.find({
         status: "waiting",
-        creator: { $ne: userId }
+        creator: { $ne: userId },
       })
         .populate("creator")
         .populate("players.data")
@@ -167,7 +153,7 @@ class MatchAPI extends DataSource {
 
   async getMatchById({ matchId, userId }) {
     const match = R.pipe(
-      match => match.toObject(),
+      (match) => match.toObject(),
       formatMatch,
       assocCurrentPlayerCards(userId),
       assocCardsPlayedByPlayers,
@@ -178,9 +164,7 @@ class MatchAPI extends DataSource {
       assocTrucoStatus(userId),
       assocEnvidoStatus(userId)
     )(
-      await Match.findById(matchId)
-        .populate("creator")
-        .populate("players.data")
+      await Match.findById(matchId).populate("creator").populate("players.data")
     );
 
     // Prevent user from accessing a match not joined if it's already started
@@ -204,25 +188,22 @@ class MatchAPI extends DataSource {
       playersCount,
       points,
       creator: userId,
-      players: [{ data: userId, isFromFirstTeam: true }]
+      players: [{ data: userId, isFromFirstTeam: true }],
     };
     const newMatch = await new Match(matchInput).save();
 
     const newMatchData = R.pipe(
-      match => match.toObject(),
+      (match) => match.toObject(),
       formatMatch
     )(
-      await newMatch
-        .populate("creator")
-        .populate("players.data")
-        .execPopulate()
+      await newMatch.populate("creator").populate("players.data").execPopulate()
     );
 
     pubsub.publish(events.MATCH_ADDED, {
       matchListUpdated: {
         type: "NEW_MATCH",
-        ...newMatchData
-      }
+        ...newMatchData,
+      },
     });
     return newMatchData;
   }
@@ -252,7 +233,7 @@ class MatchAPI extends DataSource {
     const originalMatch = (await Match.findById(matchId)).toObject();
 
     const updatedMatch = R.pipe(
-      match => match.toObject(),
+      (match) => match.toObject(),
       formatMatch,
       assocCardsPlayedByPlayers,
       assocNextPlayer
@@ -264,17 +245,17 @@ class MatchAPI extends DataSource {
           $push: {
             players: {
               data: userId,
-              isFromFirstTeam: isOdd(playersCount.length)
+              isFromFirstTeam: isOdd(playersCount.length),
             },
             ...(startGame
               ? {
                   rounds: getNewRoundData([
                     ...R.map(R.prop("data"), originalMatch.players),
-                    userId
-                  ])
+                    userId,
+                  ]),
                 }
-              : {})
-          }
+              : {}),
+          },
         },
         { new: true }
       )
@@ -284,7 +265,7 @@ class MatchAPI extends DataSource {
 
     if (startGame) {
       // Send one event to each player (only show their cards)
-      updatedMatch.players.forEach(player => {
+      updatedMatch.players.forEach((player) => {
         const update = {
           userId: player.id,
           matchUpdated: {
@@ -293,14 +274,14 @@ class MatchAPI extends DataSource {
               assocPoints(player.id),
               assocIsLastPlayerFromTeam(player.id)
             )(updatedMatch),
-            type: events.START_GAME
-          }
+            type: events.START_GAME,
+          },
         };
         pubsub.publish(events.START_GAME, update);
       });
     } else {
       pubsub.publish(events.NEW_PLAYER, {
-        matchUpdated: { ...updatedMatch, type: events.NEW_PLAYER }
+        matchUpdated: { ...updatedMatch, type: events.NEW_PLAYER },
       });
     }
 
@@ -308,8 +289,8 @@ class MatchAPI extends DataSource {
     pubsub.publish(startGame ? events.MATCH_REMOVED : events.MATCH_UPDATED, {
       matchListUpdated: {
         type: startGame ? "DELETED_MATCH" : "UPDATED_MATCH",
-        ...updatedMatch
-      }
+        ...updatedMatch,
+      },
     });
 
     return updatedMatch;
@@ -332,11 +313,11 @@ class MatchAPI extends DataSource {
 
     const cards = R.pipe(
       R.prop("cardsByPlayer"),
-      R.find(cardsByPlayer => cardsByPlayer.playerId.equals(userId)),
+      R.find((cardsByPlayer) => cardsByPlayer.playerId.equals(userId)),
       R.prop("cards")
     )(currentRound);
 
-    const selectedCardIndex = R.findIndex(card => card._id.equals(cardId))(
+    const selectedCardIndex = R.findIndex((card) => card._id.equals(cardId))(
       cards
     );
     const selectedCard = cards[selectedCardIndex];
@@ -360,7 +341,7 @@ class MatchAPI extends DataSource {
     if (
       R.anyPass([
         R.pathEq(["truco", "status"], "PENDING"),
-        R.pathEq(["envido", "status"], "PENDING")
+        R.pathEq(["envido", "status"], "PENDING"),
       ])(currentRound)
     ) {
       throw new Error("Can't play card if truco or envido answer is pending");
@@ -369,7 +350,7 @@ class MatchAPI extends DataSource {
     const currentHandIndex = currentRound.hands.length - 1;
     const currentHand = R.last(currentRound.hands);
 
-    const playersIds = R.map(player => player.data.toString(), match.players);
+    const playersIds = R.map((player) => player.data.toString(), match.players);
     const playerIndex = R.findIndex(R.equals(userId))(playersIds);
 
     const lastPlayerIndex =
@@ -390,10 +371,7 @@ class MatchAPI extends DataSource {
     const nextPlayerIndex =
       R.type(handStarterPlayerIndex) === "Number"
         ? handStarterPlayerIndex
-        : R.pipe(
-            R.inc,
-            R.modulo(R.__, match.playersCount)
-          )(playerIndex);
+        : R.pipe(R.inc, R.modulo(R.__, match.playersCount))(playerIndex);
 
     const nextPlayerId = match.players[nextPlayerIndex].data;
 
@@ -413,7 +391,7 @@ class MatchAPI extends DataSource {
       getMatchWinnerTeam(match, roundWinnerTeam, roundTrucoPoints);
 
     const updatedMatch = R.pipe(
-      match => match.toObject(),
+      (match) => match.toObject(),
       formatMatch,
       assocCardsPlayedByPlayers,
       assocNextPlayer
@@ -428,36 +406,36 @@ class MatchAPI extends DataSource {
             ...(isLastPlayerOfHand && {
               [`rounds.${currentRoundIndex}.hands.${currentHandIndex}.winnerTeam`]: handWinnerTeam,
               [`rounds.${currentRoundIndex}.hands.${currentHandIndex + 1}`]: {
-                initialPlayerIndex: nextPlayerIndex
-              }
+                initialPlayerIndex: nextPlayerIndex,
+              },
             }),
             ...(matchWinner && {
-              winnerTeam: matchWinner
-            })
+              winnerTeam: matchWinner,
+            }),
           },
           ...(roundWinnerTeam && {
             $inc: {
               [roundWinnerTeam === "first"
                 ? "pointsFirstTeam"
-                : "pointsSecondTeam"]: roundTrucoPoints
-            }
+                : "pointsSecondTeam"]: roundTrucoPoints,
+            },
           }),
           $push: {
             [`rounds.${currentRoundIndex}.cardsPlayedByPlayer.${playerIndex}.cards`]: {
               id: cardId,
-              card: selectedCard.card
-            }
-          }
+              card: selectedCard.card,
+            },
+          },
         },
         {
-          new: true
+          new: true,
         }
       )
         .populate("creator")
         .populate("players.data")
     );
 
-    updatedMatch.players.forEach(player => {
+    updatedMatch.players.forEach((player) => {
       pubsub.publish(events.NEW_MOVE, {
         userId: player.id,
         matchUpdated: {
@@ -470,8 +448,8 @@ class MatchAPI extends DataSource {
             assocTrucoStatus(player.id),
             assocEnvidoStatus(player.id)
           )(updatedMatch),
-          type: events.NEW_MOVE
-        }
+          type: events.NEW_MOVE,
+        },
       });
     });
 
@@ -483,7 +461,7 @@ class MatchAPI extends DataSource {
         await delay(5000);
 
         const newRoundMatch = R.pipe(
-          match => match.toObject(),
+          (match) => match.toObject(),
           formatMatch,
           assocCardsPlayedByPlayers,
           assocNextPlayer
@@ -499,18 +477,18 @@ class MatchAPI extends DataSource {
                     R.head,
                     R.prop("initialPlayerIndex")
                   )(currentRound)
-                )
-              }
+                ),
+              },
             },
             {
-              new: true
+              new: true,
             }
           )
             .populate("creator")
             .populate("players.data")
         );
 
-        newRoundMatch.players.forEach(player => {
+        newRoundMatch.players.forEach((player) => {
           pubsub.publish(events.NEW_ROUND, {
             userId: player.id,
             matchUpdated: {
@@ -520,8 +498,8 @@ class MatchAPI extends DataSource {
                 assocRoundWinnerTeam(player.id),
                 assocIsLastPlayerFromTeam(player.id)
               )(newRoundMatch),
-              type: events.NEW_ROUND
-            }
+              type: events.NEW_ROUND,
+            },
           });
         });
       })();
@@ -560,7 +538,7 @@ class MatchAPI extends DataSource {
     )(roundTruco);
 
     const isFromFirstTeam = R.pipe(
-      R.find(player => player.data.equals(userId)),
+      R.find((player) => player.data.equals(userId)),
       R.prop("isFromFirstTeam")
     )(match.players);
 
@@ -598,23 +576,23 @@ class MatchAPI extends DataSource {
         R.anyPass([
           R.equals("TRUCO"),
           R.equals("RETRUCO"),
-          R.equals("VALE_CUATRO")
+          R.equals("VALE_CUATRO"),
         ]),
-        R.always(action)
+        R.always(action),
       ],
-      [R.T, R.always(roundTruco.type)]
+      [R.T, R.always(roundTruco.type)],
     ])(action);
 
     const newStatus = R.cond([
       [R.equals("ACCEPT"), R.always("ACCEPTED")],
       [R.equals("REJECT"), R.always("REJECTED")],
-      [R.T, R.always("PENDING")]
+      [R.T, R.always("PENDING")],
     ])(action);
 
     // @todo -> Add new player index if game is finished
 
     const updatedMatch = R.pipe(
-      match => match.toObject(),
+      (match) => match.toObject(),
       formatMatch,
       assocCardsPlayedByPlayers,
       assocNextPlayer
@@ -627,16 +605,13 @@ class MatchAPI extends DataSource {
               type: newType,
               status: newStatus,
               isFromFirstTeam,
-              hand: R.pipe(
-                R.prop("hands"),
-                R.length
-              )(currentRound)
+              hand: R.pipe(R.prop("hands"), R.length)(currentRound),
             },
             ...(trucoRejected
               ? {
                   [`rounds.${currentRoundIndex}.winner`]: isFromFirstTeam
                     ? "second"
-                    : "first"
+                    : "first",
                 }
               : {}),
             ...(trucoRejected && !matchWinner
@@ -648,20 +623,20 @@ class MatchAPI extends DataSource {
                       R.head,
                       R.prop("initialPlayerIndex")
                     )(currentRound)
-                  )
+                  ),
                 }
               : {}),
             ...(matchWinner && {
-              winnerTeam: matchWinner
-            })
+              winnerTeam: matchWinner,
+            }),
           },
           ...(trucoRejected && {
             $inc: {
               [isFromFirstTeam
                 ? "pointsSecondTeam"
-                : "pointsFirstTeam"]: roundTrucoPoints
-            }
-          })
+                : "pointsFirstTeam"]: roundTrucoPoints,
+            },
+          }),
         },
         { new: true }
       )
@@ -669,7 +644,7 @@ class MatchAPI extends DataSource {
         .populate("players.data")
     );
 
-    updatedMatch.players.forEach(player => {
+    updatedMatch.players.forEach((player) => {
       const result = {
         userId: player.id,
         matchUpdated: {
@@ -684,16 +659,16 @@ class MatchAPI extends DataSource {
           type: events.TRUCO_ACTION,
           lastAction: {
             playerId: userId,
-            type: action
-          }
-        }
+            type: action,
+          },
+        },
       };
       pubsub.publish(events.TRUCO_ACTION, result);
     });
 
     return {
       success: true,
-      message: "Match updated successfully"
+      message: "Match updated successfully",
     };
   }
 
@@ -722,7 +697,7 @@ class MatchAPI extends DataSource {
 
     const isAnswering = R.propEq("status", "PENDING")(roundEnvido);
     const isFromFirstTeam = R.pipe(
-      R.find(player => player.data.equals(userId)),
+      R.find((player) => player.data.equals(userId)),
       R.prop("isFromFirstTeam")
     )(match.players);
 
@@ -759,7 +734,7 @@ class MatchAPI extends DataSource {
         envidoList: R.propOr([], "list", roundEnvido),
         pointsFirstTeam: match.pointsFirstTeam,
         pointsSecondTeam: match.pointsSecondTeam,
-        isAccepted
+        isAccepted,
       });
 
     const newEnvidoList = ["ACCEPT", "REJECT"].includes(action)
@@ -769,18 +744,18 @@ class MatchAPI extends DataSource {
     const newStatus = R.cond([
       [R.equals("ACCEPT"), R.always("ACCEPTED")],
       [R.equals("REJECT"), R.always("REJECTED")],
-      [R.T, R.always("PENDING")]
+      [R.T, R.always("PENDING")],
     ])(action);
 
     const firstRoundPlayer = R.pipe(
       R.prop("hands"),
       R.head,
       R.prop("initialPlayerIndex"),
-      playerIndex => match.players.map(p => p.data)[playerIndex]
+      (playerIndex) => match.players.map((p) => p.data)[playerIndex]
     )(currentRound);
 
     const updatedMatch = R.pipe(
-      match => match.toObject(),
+      (match) => match.toObject(),
       formatMatch,
       assocCardsPlayedByPlayers,
       assocNextPlayer
@@ -792,19 +767,19 @@ class MatchAPI extends DataSource {
             [`rounds.${currentRoundIndex}.envido`]: {
               list: newEnvidoList,
               status: newStatus,
-              isFromFirstTeam
+              isFromFirstTeam,
             },
             ...(isAccepted && {
-              [`rounds.${currentRoundIndex}.nextPlayerEnvido`]: firstRoundPlayer
-            })
+              [`rounds.${currentRoundIndex}.nextPlayerEnvido`]: firstRoundPlayer,
+            }),
           },
           ...(isRejected && {
             $inc: {
               [isFromFirstTeam
                 ? "pointsSecondTeam"
-                : "pointsFirstTeam"]: envidoPoints
-            }
-          })
+                : "pointsFirstTeam"]: envidoPoints,
+            },
+          }),
         },
         { new: true }
       )
@@ -812,7 +787,7 @@ class MatchAPI extends DataSource {
         .populate("players.data")
     );
 
-    updatedMatch.players.forEach(player => {
+    updatedMatch.players.forEach((player) => {
       const result = {
         userId: player.id,
         matchUpdated: {
@@ -827,16 +802,16 @@ class MatchAPI extends DataSource {
           type: events.ENVIDO_ACTION,
           lastAction: {
             playerId: userId,
-            type: action
-          }
-        }
+            type: action,
+          },
+        },
       };
       pubsub.publish(events.ENVIDO_ACTION, result);
     });
 
     return {
       success: true,
-      message: "Match updated successfully"
+      message: "Match updated successfully",
     };
   }
 
@@ -865,32 +840,32 @@ class MatchAPI extends DataSource {
       action === "TABLE" &&
       R.pipe(
         R.prop("cardsPlayedByPlayer"),
-        R.find(cardsByPlayer => cardsByPlayer.playerId.equals(userId)),
+        R.find((cardsByPlayer) => cardsByPlayer.playerId.equals(userId)),
         R.prop("cards"),
         R.pluck("card"),
-        cards => getEnvidoFromPlayer(cards)
+        (cards) => getEnvidoFromPlayer(cards)
       )(currentRound);
 
     const playerEnvidoPoints =
       ["POINTS", "N_ARE_MORE"].includes(action) &&
       R.pipe(
         R.prop("cardsByPlayer"),
-        R.find(player => player.playerId.equals(userId)),
+        R.find((player) => player.playerId.equals(userId)),
         R.prop("cards"),
         R.pluck("card"),
-        cards => getEnvidoFromPlayer(cards)
+        (cards) => getEnvidoFromPlayer(cards)
       )(currentRound);
 
     const currentPlayerEnvidoPoints = tablePoints || playerEnvidoPoints;
 
-    const playersIds = R.map(player => player.data.toString(), match.players);
+    const playersIds = R.map((player) => player.data.toString(), match.players);
     const playerIndex = R.findIndex(R.equals(userId))(playersIds);
     const nextPlayerIndex =
       playerIndex + 1 === match.players.length ? 0 : playerIndex + 1;
     const nextPlayerId = playersIds[nextPlayerIndex];
 
     const isFromFirstTeam = R.pipe(
-      R.find(player => player.data.equals(userId)),
+      R.find((player) => player.data.equals(userId)),
       R.prop("isFromFirstTeam")
     )(match.players);
     const isLastPlayer =
@@ -902,7 +877,7 @@ class MatchAPI extends DataSource {
         envidoList: R.propOr([], "list", roundEnvido),
         pointsFirstTeam: match.pointsFirstTeam,
         pointsSecondTeam: match.pointsSecondTeam,
-        isAccepted: true
+        isAccepted: true,
       });
 
     const currentPlayerEnvido = {
@@ -913,7 +888,7 @@ class MatchAPI extends DataSource {
       isFromFirstTeam,
       ...(typeof currentPlayerEnvidoPoints === "number"
         ? { points: currentPlayerEnvidoPoints }
-        : {})
+        : {}),
     };
 
     const envidoWinnerTeam =
@@ -921,7 +896,7 @@ class MatchAPI extends DataSource {
       getEnvidoWinnerTeam([...currentRound.envidoPoints, currentPlayerEnvido]);
 
     const updatedMatch = R.pipe(
-      match => match.toObject(),
+      (match) => match.toObject(),
       formatMatch,
       assocCardsPlayedByPlayers,
       assocNextPlayer
@@ -932,18 +907,18 @@ class MatchAPI extends DataSource {
           $set: {
             [`rounds.${currentRoundIndex}.nextPlayerEnvido`]: isLastPlayer
               ? undefined
-              : nextPlayerId
+              : nextPlayerId,
           },
           $push: {
-            [`rounds.${currentRoundIndex}.envidoPoints`]: currentPlayerEnvido
+            [`rounds.${currentRoundIndex}.envidoPoints`]: currentPlayerEnvido,
           },
           ...(isLastPlayer && {
             $inc: {
               [envidoWinnerTeam === "first"
                 ? "pointsFirstTeam"
-                : "pointsSecondTeam"]: envidoPoints
-            }
-          })
+                : "pointsSecondTeam"]: envidoPoints,
+            },
+          }),
         },
         { new: true }
       )
@@ -951,7 +926,7 @@ class MatchAPI extends DataSource {
         .populate("players.data")
     );
 
-    updatedMatch.players.forEach(player => {
+    updatedMatch.players.forEach((player) => {
       const result = {
         userId: player.id,
         matchUpdated: {
@@ -969,16 +944,151 @@ class MatchAPI extends DataSource {
             type: action,
             ...(typeof currentPlayerEnvidoPoints === "number"
               ? { points: currentPlayerEnvidoPoints }
-              : {})
-          }
-        }
+              : {}),
+          },
+        },
       };
       pubsub.publish(events.ENVIDO_ACTION, result);
     });
 
     return {
       success: true,
-      message: "Match updated successfully"
+      message: "Match updated successfully",
+    };
+  }
+
+  // @TODO: Review leaveRound logic:
+  // - check envido points sum (not working properly)
+  // - check all logic
+  async leaveRound({ matchId, userId }) {
+    const match = await Match.findById(matchId);
+
+    const actionError = validateMatchAction(matchId, match, userId);
+
+    if (actionError) {
+      throw new Error(actionError);
+    }
+
+    const currentRound = R.last(match.rounds);
+    const currentRoundIndex = match.rounds.length - 1;
+
+    if (!currentRound.nextPlayer.equals(userId)) {
+      throw new Error(
+        `The player with the id ${userId} can't leave the round now.`
+      );
+    }
+
+    const roundEnvido = R.prop("envido")(currentRound);
+
+    const isFromFirstTeam = R.pipe(
+      R.find((player) => player.data.equals(userId)),
+      R.prop("isFromFirstTeam")
+    )(match.players);
+
+    const teamPlayersIds = R.pipe(
+      R.filter(R.propEq("isFromFirstTeam", isFromFirstTeam)),
+      R.pluck("data")
+    )(match.players);
+
+    const isLastPlayerInHandFromTeam =
+      R.intersection(
+        teamPlayersIds,
+        R.pluck("data", currentRound.playersOutOfHand)
+      ).length ===
+      match.players.length / 2 - 1;
+
+    const roundTrucoPoints = getRoundTrucoPoints(currentRound);
+
+    const isEnvidoPending = R.propEq("status", "PENDING")(roundEnvido);
+
+    // Only add envido points if envido is pending
+    const envidoPoints = isEnvidoPending
+      ? getRoundEnvidoPoints({
+          envidoList: R.propOr([], "list", roundEnvido),
+          pointsFirstTeam: match.pointsFirstTeam,
+          pointsSecondTeam: match.pointsSecondTeam,
+          isAccepted: false, // Leaving round is the same as rejecting envido
+        })
+      : 0;
+
+    const matchWinnerTeam = getMatchWinnerTeam(
+      match,
+      isFromFirstTeam ? "second" : "first",
+      roundTrucoPoints,
+      envidoPoints
+    );
+
+    const updatedMatch = R.pipe(
+      (match) => match.toObject(),
+      formatMatch,
+      assocCardsPlayedByPlayers,
+      assocNextPlayer
+    )(
+      await Match.findByIdAndUpdate(
+        matchId,
+        {
+          $push: {
+            [`rounds.${currentRoundIndex}.playersOutOfHand`]: userId,
+          },
+          ...(isLastPlayerInHandFromTeam
+            ? {
+                $set: {
+                  ...(matchWinnerTeam
+                    ? {
+                        winnerTeam: matchWinnerTeam,
+                      }
+                    : {
+                        [`rounds.${currentRoundIndex + 1}`]: getNewRoundData(
+                          R.map(R.prop("data"), match.players),
+                          R.pipe(
+                            R.prop("hands"),
+                            R.head,
+                            R.prop("initialPlayerIndex")
+                          )(currentRound)
+                        ),
+                      }),
+                  [`rounds.${currentRoundIndex}.winner`]: isFromFirstTeam
+                    ? "second"
+                    : "first",
+                },
+                $inc: {
+                  [isFromFirstTeam ? "pointsSecondTeam" : "pointsFirstTeam"]:
+                    roundTrucoPoints + envidoPoints,
+                },
+              }
+            : {}),
+        },
+        { new: true }
+      )
+        .populate("creator")
+        .populate("players.data")
+    );
+
+    updatedMatch.players.forEach((player) => {
+      const result = {
+        userId: player.id,
+        matchUpdated: {
+          ...R.pipe(
+            assocCurrentPlayerCards(player.id),
+            assocPoints(player.id),
+            assocRoundWinnerTeam(player.id),
+            assocTrucoStatus(player.id),
+            assocEnvidoStatus(player.id),
+            assocIsLastPlayerFromTeam(player.id)
+          )(updatedMatch),
+          type: events.LEAVE_ROUND,
+          lastAction: {
+            playerId: userId,
+            type: "LEAVE_ROUND",
+          },
+        },
+      };
+      pubsub.publish(events.LEAVE_ROUND, result);
+    });
+
+    return {
+      success: true,
+      message: "Match updated successfully",
     };
   }
 }

@@ -1,5 +1,6 @@
 import React from "react";
 import gql from "graphql-tag";
+import { useMutation } from "react-apollo";
 import Spinner from "react-svg-spinner";
 
 import actionsToText from "../../../utils/actionsToText.json";
@@ -32,15 +33,17 @@ const SAY_ENVIDO = gql`
   }
 `;
 
-const getMutation = {
-  truco: PLAY_TRUCO,
-  envido: PLAY_ENVIDO,
-  sayEnvido: SAY_ENVIDO
-};
+const LEAVE_ROUND = gql`
+  mutation leaveRound($matchId: ID!) {
+    leaveRound(matchId: $matchId) {
+      success
+      message
+    }
+  }
+`;
 
 export default function ActionsList({
   matchId,
-  client,
   ourAction,
   theirAction,
   sayEnvidoActions = [],
@@ -48,12 +51,10 @@ export default function ActionsList({
   envidoActions = [],
   trucoActions = []
 }) {
-  const playAction = (type, action) => {
-    client.mutate({
-      mutation: getMutation[type],
-      variables: { matchId, action }
-    });
-  };
+  const [playTruco] = useMutation(PLAY_TRUCO);
+  const [playEnvido] = useMutation(PLAY_ENVIDO);
+  const [sayEnvido] = useMutation(SAY_ENVIDO);
+  const [leaveRound] = useMutation(LEAVE_ROUND);
 
   return (
     <div className={styles.actions}>
@@ -79,7 +80,7 @@ export default function ActionsList({
             <button
               key={action}
               className={styles.action}
-              onClick={() => playAction("sayEnvido", action)}
+              onClick={() => sayEnvido({ variables: { matchId, action } })}
             >
               {actionsToText[action].replace("{{points}}", envidoPoints)}
             </button>
@@ -92,7 +93,7 @@ export default function ActionsList({
             <button
               key={action}
               className={styles.action}
-              onClick={() => playAction("envido", action)}
+              onClick={() => playEnvido({ variables: { matchId, action } })}
             >
               {actionsToText[action]}
             </button>
@@ -108,13 +109,23 @@ export default function ActionsList({
             <button
               key={action}
               className={styles.action}
-              onClick={() => playAction("truco", action)}
+              onClick={() => playTruco({ variables: { matchId, action } })}
             >
               {actionsToText[action]}
             </button>
           ))}
         </div>
       )}
+      <span className={styles.divider} />
+      <div className={styles.actionsType}>
+        <button
+          key="leaveRound"
+          className={styles.action}
+          onClick={() => leaveRound({ variables: { matchId } })}
+        >
+          {actionsToText.LEAVE_ROUND}
+        </button>
+      </div>
     </div>
   );
 }

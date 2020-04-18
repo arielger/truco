@@ -10,7 +10,7 @@ const isValidEnvidoAction = ({ action, roundEnvido }) => {
     R.pipe(
       R.filter(R.equals("ENVIDO")),
       R.length,
-      timesEnvidoWasPlayed => timesEnvidoWasPlayed >= 2
+      (timesEnvidoWasPlayed) => timesEnvidoWasPlayed >= 2
     )(envidoList)
   );
   const canPlayRealEnvido = !(
@@ -22,7 +22,7 @@ const isValidEnvidoAction = ({ action, roundEnvido }) => {
     ...(currentStatus === "PENDING" ? ["ACCEPT", "REJECT"] : []),
     ...(canPlayEnvido ? ["ENVIDO"] : []),
     ...(canPlayRealEnvido ? ["REAL_ENVIDO"] : []),
-    ...(canPlayFaltaEnvido ? ["FALTA_ENVIDO"] : [])
+    ...(canPlayFaltaEnvido ? ["FALTA_ENVIDO"] : []),
   ];
 
   return possibleActions.includes(action);
@@ -32,7 +32,7 @@ const getRoundEnvidoPoints = ({
   envidoList,
   pointsFirstTeam,
   pointsSecondTeam,
-  isAccepted
+  isAccepted,
 }) => {
   /*
     Falta envido:
@@ -54,16 +54,16 @@ const getRoundEnvidoPoints = ({
       const itemPoints = {
         ENVIDO: 2,
         REAL_ENVIDO: 3,
-        FALTA_ENVIDO: faltaEnvidoPoints
+        FALTA_ENVIDO: faltaEnvidoPoints,
       }[envidoItem];
 
       return totalPoints + itemPoints;
     }, 0),
-    totalPoints => Math.max(totalPoints, 1)
+    (totalPoints) => Math.max(totalPoints, 1)
   )(envidoList);
 };
 
-const assocEnvidoStatus = userId => match => {
+const assocEnvidoStatus = (userId) => (match) => {
   const { players } = match;
   const isFromFirstTeam = R.pipe(
     R.find(R.propEq("id", userId)),
@@ -74,15 +74,11 @@ const assocEnvidoStatus = userId => match => {
 
   return R.pipe(
     R.ifElse(
-      () =>
-        R.pipe(
-          R.propOr([], "list"),
-          R.length
-        )(envido),
+      () => R.pipe(R.propOr([], "list"), R.length)(envido),
       R.assoc("envido", {
         ...envido,
         team:
-          R.prop("isFromFirstTeam", envido) === isFromFirstTeam ? "we" : "them"
+          R.prop("isFromFirstTeam", envido) === isFromFirstTeam ? "we" : "them",
       }),
       R.dissoc("envido")
     ),
@@ -91,7 +87,7 @@ const assocEnvidoStatus = userId => match => {
       "envidoPoints",
       R.pipe(
         R.propOr([], "envidoPoints"),
-        R.map(playerEnvido =>
+        R.map((playerEnvido) =>
           R.assoc(
             "team",
             playerEnvido.isFromFirstTeam === isFromFirstTeam ? "we" : "them",
@@ -103,14 +99,14 @@ const assocEnvidoStatus = userId => match => {
   )(match);
 };
 
-const getCardNumber = card => Number(card.split("-")[0]);
-const getCardStep = card => card.split("-")[1];
+const getCardNumber = (card) => Number(card.split("-")[0]);
+const getCardStep = (card) => card.split("-")[1];
 
-const getPointsBySet = cards => {
+const getPointsBySet = (cards) => {
   const twoCardsBonus = cards.length >= 2 ? 20 : 0;
   const orderedCards = R.pipe(
     R.sort(
-      R.descend(card => {
+      R.descend((card) => {
         const cardNumber = getCardNumber(card);
         return cardNumber > 7 ? 0 : cardNumber;
       })
@@ -124,26 +120,23 @@ const getPointsBySet = cards => {
   }, twoCardsBonus);
 };
 
-const getEnvidoFromPlayer = cards => {
+const getEnvidoFromPlayer = (cards) => {
   return R.pipe(
     R.groupBy(getCardStep),
     R.values,
     R.map(getPointsBySet),
-    points => Math.max(...points)
+    (points) => Math.max(...points)
   )(cards);
 };
 
-const getEnvidoWinnerTeam = envidoByPlayer => {
-  return R.pipe(
-    R.pluck("points"),
-    points => {
-      const maxPoints = Math.max(...points.filter(Boolean)); // Remove undefined values
-      const winnerPlayerIndex = R.findIndex(R.equals(maxPoints), points);
-      const isWinnerFromFirstTeam =
-        envidoByPlayer[winnerPlayerIndex].isFromFirstTeam;
-      return isWinnerFromFirstTeam ? "first" : "second";
-    }
-  )(envidoByPlayer);
+const getEnvidoWinnerTeam = (envidoByPlayer) => {
+  return R.pipe(R.pluck("points"), (points) => {
+    const maxPoints = Math.max(...points.filter(Boolean)); // Remove undefined values
+    const winnerPlayerIndex = R.findIndex(R.equals(maxPoints), points);
+    const isWinnerFromFirstTeam =
+      envidoByPlayer[winnerPlayerIndex].isFromFirstTeam;
+    return isWinnerFromFirstTeam ? "first" : "second";
+  })(envidoByPlayer);
 };
 
 module.exports = {
@@ -151,5 +144,5 @@ module.exports = {
   getRoundEnvidoPoints,
   assocEnvidoStatus,
   getEnvidoFromPlayer,
-  getEnvidoWinnerTeam
+  getEnvidoWinnerTeam,
 };

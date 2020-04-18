@@ -202,6 +202,7 @@ extend type Mutation {
   playTruco(matchId: ID!, action: TrucoActions!): MatchUpdateResponse!
   playEnvido(matchId: ID!, action: EnvidoActions!): MatchUpdateResponse!
   sayEnvido(matchId: ID!, action: SayEnvidoActions!): MatchUpdateResponse!
+  leaveRound(matchId: ID!): MatchUpdateResponse!
 }
 
 extend type Subscription {
