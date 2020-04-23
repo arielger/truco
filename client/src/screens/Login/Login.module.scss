@@ -1,50 +1,27 @@
 .login {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  height: 100%;
+  background-color: #27292C;
 }
 
-.modal {
-  background-color: #0d0c0f;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 24px 32px 32px 32px;
+.listItem {
+  // Fix text-shadow not working https://github.com/FortAwesome/Font-Awesome/issues/11916
+  filter: drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.25));
 }
 
-.loginTitle {
-  margin-top: 0;
+.facebookBtn {
+  background-color: #4267B2;
+
+  &:hover,
+  &:focus {
+    background-color: #6383c5;
+  }
 }
 
-.socialLoginBtn {
-  color: white;
-  border-radius: 50px;
-  border: none;
-  font-size: 18px;
-  padding: 12px 24px;
-  cursor: pointer;
-  width: 280px;
-  display: inline-flex;
-  align-items: center;
+.googleBtn {
+  background-color: #DB4437;
 
-  .loginIcon {
-    margin-right: 16px;
-  }
-
-  &:not(:last-of-type) {
-    margin-bottom: 8px;
-  }
-
-  &.anonymous {
-    background-color: #f36c45;
-  }
-
-  &.google {
-    background-color: #fff;
-    color: rgba(0, 0, 0, 0.7);
-  }
-
-  &.facebook {
-    background-color: #3b5998;
+  &:hover,
+  &:focus {
+    background-color: #e36e64;
   }
 }

@@ -3,12 +3,20 @@ import { ApolloConsumer } from "react-apollo";
 import FacebookLogin from "react-facebook-login/dist/facebook-login-render-props";
 import GoogleLogin from "react-google-login";
 import gql from "graphql-tag";
-import cs from "classnames";
+import padStart from "pad-start";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFacebookSquare, faGoogle } from "@fortawesome/free-brands-svg-icons";
-import { faUserCircle } from "@fortawesome/free-solid-svg-icons";
+import { faArrowRight, faUsers, faLock } from "@fortawesome/free-solid-svg-icons";
 
+import logo from "./truco-logo.svg";
 import styles from "./Login.module.scss";
+
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 
 const LOG_IN_AS_GUEST = gql`
   mutation LogInAsGuest {
@@ -46,7 +54,10 @@ const LOG_IN_WITH_GOOGLE = gql`
   }
 `;
 
+
 export default function Login() {
+  const [playerName, setPlayerName] = React.useState(`jugador${padStart(getRandomInt(1, 10000), 4, "0")}`);
+
   const logInAnonymously = client => {
     client
       .mutate({
@@ -92,66 +103,82 @@ export default function Login() {
   };
 
   return (
-    <div className={styles.login}>
-      <h1>Truco.io</h1>
-      <div className={styles.modal}>
-        <h2 className={styles.loginTitle}>Login</h2>
+    <div className={`${styles.login} flex flex-col items-center md:justify-center`}>
+      <div className="flex flex-col items-center flex-grow md:flex-grow-0 justify-center">
+        <img src={logo} alt="Truco.pro logo" className="mb-10" />
+        <ul className="flex flex-col space-y-4">
+          {[
+            { icon: faArrowRight, text: "Juga sin registrarte" },
+            { icon: faUsers, text: "Mesas de 2, 4 y 6 jugadores" },
+            { icon: faLock, text: "Partidas privadas" }
+          ].map(({ icon, text }) => (
+            <li className="flex items-center">
+              <span className="inline-flex items-center justify-center rounded-full bg-orange-500 w-10 h-10 mr-3">
+                <FontAwesomeIcon icon={icon} className={`text-lg ${styles.listItem}`} />
+              </span>
+              <span className="text-lg font-medium">
+                {text}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="flex flex-col items-stretch justify-center bg-white mt-auto md:mt-12 p-8 w-full rounded-t md:rounded md:max-w-md">
         <ApolloConsumer>
           {client => (
             <>
-              <FacebookLogin
-                appId={process.env.REACT_APP_FACEBOOK_APP_ID}
-                fields="name,email,picture"
-                callback={({ accessToken }) => {
-                  logInWithFacebook(client, accessToken);
-                }}
-                render={({ onClick }) => (
-                  <button
-                    className={cs([styles.socialLoginBtn, styles.facebook])}
-                    onClick={onClick}
-                  >
-                    <FontAwesomeIcon
-                      icon={faFacebookSquare}
-                      className={styles.loginIcon}
-                    />
-                    Ingresar con Facebook
-                  </button>
-                )}
-              />
-              <GoogleLogin
-                clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}
-                onSuccess={({ accessToken }) =>
-                  logInWithGoogle(client, accessToken)
-                }
-                onFailure={error => {
-                  console.log("Error logging in with google", error);
-                }}
-                render={({ onClick, disabled }) => (
-                  <button
-                    className={cs([styles.socialLoginBtn, styles.google])}
-                    disabled={disabled}
-                    onClick={onClick}
-                  >
-                    <FontAwesomeIcon
-                      icon={faGoogle}
-                      className={styles.loginIcon}
-                    />
-                    Ingresar con Google
-                  </button>
-                )}
-              />
-
+              <input value={playerName} onChange={e => setPlayerName(e.target.value)} className="px-4 border border-gray-400 rounded-lg w-full h-12 shadow mb-3 text-gray-800 focus:outline-none focus:border-blue-400" placeholder="Nombre" />
               <button
-                className={cs([styles.socialLoginBtn, styles.anonymous])}
+                className="h-12 bg-blue-500 hover:bg-blue-400 focus:bg-blue-400 rounded-lg text-lg font-medium mb-4 focus:outline-none"
                 type="submit"
                 onClick={() => logInAnonymously(client)}
               >
-                <FontAwesomeIcon
-                  icon={faUserCircle}
-                  className={styles.loginIcon}
-                />
-                Ingresar anonimamente
+                Ingresar
               </button>
+              <span className="h-px w-full bg-gray-300 mb-4" />
+              <div className="flex items-center space-x-3">
+                <FacebookLogin
+                  appId={process.env.REACT_APP_FACEBOOK_APP_ID}
+                  fields="name,email,picture"
+                  callback={({ accessToken }) => {
+                    logInWithFacebook(client, accessToken);
+                  }}
+                  render={({ onClick }) => (
+                    <button
+                      className={`${styles.facebookBtn} flex-1 h-12 rounded-lg text-white focus:outline-none transition ease-in duration-100`}
+                      onClick={onClick}
+                    >
+                      <FontAwesomeIcon
+                        icon={faFacebookSquare}
+                        className="mr-3"
+                      />
+                      Facebook
+                    </button>
+                  )}
+                />
+                <GoogleLogin
+                  clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}
+                  onSuccess={({ accessToken }) =>
+                    logInWithGoogle(client, accessToken)
+                  }
+                  onFailure={error => {
+                    console.log("Error logging in with google", error);
+                  }}
+                  render={({ onClick, disabled }) => (
+                    <button
+                      className={`${styles.googleBtn} flex-1 h-12 rounded-lg text-white focus:outline-none transition ease-in duration-100`}
+                      disabled={disabled}
+                      onClick={onClick}
+                    >
+                      <FontAwesomeIcon
+                        icon={faGoogle}
+                        className="mr-3"
+                      />
+                      Google
+                    </button>
+                  )}
+                />
+              </div>
             </>
           )}
         </ApolloConsumer>

@@ -111,48 +111,46 @@ const FETCH_PROFILE = gql`
 
 const App = () => {
   return (
-    <div id="main">
-      <ApolloProvider client={client}>
-        <Query query={IS_LOGGED_IN}>
-          {({ data: { isLoggedIn } }) => (
-            <Fragment>
-              <BrowserRouter>
-                {isLoggedIn ? (
-                  <div className={styles["layout"]}>
-                    <Query query={FETCH_PROFILE}>
-                      {({ data, loading, error }) => {
-                        if (loading) return "Loading";
-                        const user = R.prop("me", data);
-                        return (
-                          <>
-                            <Header client={client} user={user} />
-                            <Switch>
-                              <Route path="/partidas" component={Matches} />
-                              <Route
-                                path="/match/:matchId"
-                                render={({ ...props }) => (
-                                  <Match user={user} {...props} />
-                                )}
-                              />
-                              <Redirect to="/partidas" />
-                            </Switch>
-                          </>
-                        );
-                      }}
-                    </Query>
-                  </div>
-                ) : (
+    <ApolloProvider client={client}>
+      <Query query={IS_LOGGED_IN}>
+        {({ data: { isLoggedIn } }) => (
+          <Fragment>
+            <BrowserRouter>
+              {isLoggedIn ? (
+                <div className={styles["layout"]}>
+                  <Query query={FETCH_PROFILE}>
+                    {({ data, loading, error }) => {
+                      if (loading) return "Loading";
+                      const user = R.prop("me", data);
+                      return (
+                        <>
+                          <Header client={client} user={user} />
+                          <Switch>
+                            <Route path="/partidas" component={Matches} />
+                            <Route
+                              path="/match/:matchId"
+                              render={({ ...props }) => (
+                                <Match user={user} {...props} />
+                              )}
+                            />
+                            <Redirect to="/partidas" />
+                          </Switch>
+                        </>
+                      );
+                    }}
+                  </Query>
+                </div>
+              ) : (
                   <Switch>
                     <Route path="/login" component={Login} />
                     <Redirect to="/login" />
                   </Switch>
                 )}
-              </BrowserRouter>
-            </Fragment>
-          )}
-        </Query>
-      </ApolloProvider>
-    </div>
+            </BrowserRouter>
+          </Fragment>
+        )}
+      </Query>
+    </ApolloProvider>
   );
 };
 
