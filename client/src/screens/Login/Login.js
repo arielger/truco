@@ -19,12 +19,11 @@ function getRandomInt(min, max) {
 
 
 const LOG_IN_AS_GUEST = gql`
-  mutation LogInAsGuest {
-    logInAsGuest {
+  mutation LogInAsGuest($name: String!) {
+    logInAsGuest(name: $name) {
       token
       user {
         name
-        avatar
       }
     }
   }
@@ -58,12 +57,15 @@ const LOG_IN_WITH_GOOGLE = gql`
 export default function Login() {
   const [playerName, setPlayerName] = React.useState(`jugador${padStart(getRandomInt(1, 10000), 4, "0")}`);
 
+  // @TODO: Prevent repetition of log in with different providers
+
   const logInAnonymously = client => {
     client
       .mutate({
-        mutation: LOG_IN_AS_GUEST
+        mutation: LOG_IN_AS_GUEST,
+        variables: { name: playerName }
       })
-      .then(({ data: { logInAsGuest: { token, user } } }) => {
+      .then(({ data: { logInAsGuest: { token } } }) => {
         localStorage.setItem("token", token);
         client.writeData({ data: { isLoggedIn: true, token } });
       })
@@ -112,7 +114,7 @@ export default function Login() {
             { icon: faUsers, text: "Mesas de 2, 4 y 6 jugadores" },
             { icon: faLock, text: "Partidas privadas" }
           ].map(({ icon, text }) => (
-            <li className="flex items-center">
+            <li className="flex items-center" key={text}>
               <span className="inline-flex items-center justify-center rounded-full bg-orange-500 w-10 h-10 mr-3">
                 <FontAwesomeIcon icon={icon} className={`text-lg ${styles.listItem}`} />
               </span>

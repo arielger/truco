@@ -3,11 +3,6 @@ const mongoose = require("mongoose");
 const { DataSource } = require("apollo-datasource");
 
 const { authenticateFacebook, authenticateGoogle } = require("../passport");
-const randomCharacters = require("../data/randomCharacters.json");
-
-function getRandomElement(array) {
-  return array[Math.floor(Math.random() * array.length)];
-}
 
 const User = mongoose.model("User");
 
@@ -16,19 +11,19 @@ class UserAPI extends DataSource {
     this.context = config.context;
   }
 
-  async logInAsGuest() {
-    const newUser = await User.create(getRandomElement(randomCharacters));
+  async logInAsGuest({ name }) {
+    const newUser = await User.create({ name });
 
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
-      expiresIn: "24h"
+      expiresIn: "24h",
     });
 
     return {
       token,
       user: {
         name: newUser.name,
-        avatar: newUser.avatar
-      }
+        avatar: newUser.avatar,
+      },
     };
   }
 
@@ -44,9 +39,9 @@ class UserAPI extends DataSource {
             user: {
               name: user.name,
               email: user.email,
-              avatar: user.avatar
+              avatar: user.avatar,
             },
-            token: user.generateJWT()
+            token: user.generateJWT(),
           };
         }
       }
@@ -77,9 +72,9 @@ class UserAPI extends DataSource {
             user: {
               name: user.name,
               email: user.email,
-              avatar: user.avatar
+              avatar: user.avatar,
             },
-            token: user.generateJWT()
+            token: user.generateJWT(),
           };
         }
       }

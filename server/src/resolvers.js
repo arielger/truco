@@ -28,8 +28,8 @@ module.exports = {
       (parent, { playersCount, points }, { userId, dataSources }) =>
         dataSources.matchAPI.createMatch({ playersCount, points, userId })
     ),
-    logInAsGuest: (parent, _, { dataSources }) =>
-      dataSources.userAPI.logInAsGuest(),
+    logInAsGuest: (parent, { name }, { dataSources }) =>
+      dataSources.userAPI.logInAsGuest({ name }),
     logInWithFacebook: async (
       parent,
       { accessToken },

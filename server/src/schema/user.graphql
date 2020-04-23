@@ -14,7 +14,7 @@ extend type Query {
 }
 
 extend type Mutation {
-  logInAsGuest: AuthResponse!
+  logInAsGuest(name: String!): AuthResponse!
   logInWithFacebook(accessToken: String!): AuthResponse!
   logInWithGoogle(accessToken: String!): AuthResponse!
 }
