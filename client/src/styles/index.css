@@ -26,3 +26,11 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
+
+// Fix alt text showing in images
+// http://www.zeldman.com/2012/03/01/replacing-the-9999px-hack-new-image-replacement/
+img {
+  text-indent: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+}

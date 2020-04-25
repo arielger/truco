@@ -8,6 +8,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFacebookSquare, faGoogle } from "@fortawesome/free-brands-svg-icons";
 import { faArrowRight, faUsers, faLock } from "@fortawesome/free-solid-svg-icons";
 
+import Button from "../../components/Button";
+
 import logo from "./truco-logo.svg";
 import styles from "./Login.module.scss";
 
@@ -130,13 +132,13 @@ export default function Login() {
           {client => (
             <>
               <input value={playerName} onChange={e => setPlayerName(e.target.value)} className="px-4 border border-gray-400 rounded-lg w-full h-12 shadow mb-3 text-gray-800 focus:outline-none focus:border-blue-400" placeholder="Nombre" />
-              <button
-                className="h-12 bg-blue-500 hover:bg-blue-400 focus:bg-blue-400 rounded-lg text-lg font-medium mb-4 focus:outline-none"
+              <Button
+                className="mb-4"
                 type="submit"
                 onClick={() => logInAnonymously(client)}
               >
                 Ingresar
-              </button>
+              </Button>
               <span className="h-px w-full bg-gray-300 mb-4" />
               <div className="flex items-center space-x-3">
                 <FacebookLogin

@@ -7,6 +7,8 @@ import { faCaretDown, faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
 import styles from "./Header.module.scss";
 import "@reach/menu-button/styles.css";
 
+// @TODO: Review if we can remove this component
+
 export default function Header({ user }) {
   return (
     <div className={styles["header"]}>

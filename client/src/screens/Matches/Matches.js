@@ -3,9 +3,10 @@ import * as R from "ramda";
 import { withApollo, Query } from "react-apollo";
 import gql from "graphql-tag";
 
+import Button from "../../components/Button";
+
 import NewMatch from "../NewMatch";
 import MatchesList from "../../components/MatchesList";
-import styles from "./Matches.module.scss";
 
 const MATCHES_QUERY = gql`
   query matchesQuery {
@@ -87,13 +88,11 @@ const Matches = ({ history, client }) => {
   );
 
   return (
-    <div className={styles["main"]}>
-      <div className={styles["header"]}>
-        <h1>Mesas</h1>
-        <button onClick={() => setNewMatchModalVisible(true)}>
-          Crear mesa
-        </button>
-      </div>
+    <div className="flex flex-col p-6 items-center items-stretch w-full md:max-w-md mx-auto">
+      <h1 className="text-3xl font-medium mb-8">Partidas</h1>
+      <Button className="mb-8" onClick={() => setNewMatchModalVisible(true)}>
+        Crear nueva
+      </Button>
       <NewMatch
         visible={isNewMatchModalVisible}
         onClose={() => setNewMatchModalVisible(false)}

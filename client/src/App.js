@@ -15,7 +15,6 @@ import gql from "graphql-tag";
 import ReactModal from "react-modal";
 
 import { Login, Matches, Match } from "./screens";
-import Header from "./components/Header";
 import styles from "./App.module.scss";
 
 ReactModal.setAppElement("#root");
@@ -124,7 +123,11 @@ const App = () => {
                       const user = R.prop("me", data);
                       return (
                         <>
-                          <Header client={client} user={user} />
+
+                          {/*
+                            @TODO: Review if we should continue using this component
+                            <Header client={client} user={user} />
+                          */}
                           <Switch>
                             <Route path="/partidas" component={Matches} />
                             <Route

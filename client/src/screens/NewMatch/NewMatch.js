@@ -3,8 +3,12 @@ import * as R from "ramda";
 import Modal from "react-modal";
 import gql from "graphql-tag";
 import { Formik, Form, Field } from "formik";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCheck } from "@fortawesome/free-solid-svg-icons";
 
 import styles from "./NewMatch.module.scss";
+
+import Button from "../../components/Button";
 
 const CREATE_MATCH = gql`
   mutation createMatch($playersCount: Int!, $points: Int!) {
@@ -13,6 +17,47 @@ const CREATE_MATCH = gql`
     }
   }
 `;
+
+const Radio = ({ id, text, className = "", disabled, ...props }) => (
+  <>
+    <Field
+      type="radio"
+      id={id}
+      {...props}
+    >
+      {({ field }) => {
+        const isChecked = field.checked;
+
+        return (
+          <div className="relative">
+            <input type="radio" id={id} className="opacity-0 absolute" disabled={disabled} {...field} />
+            <label
+              htmlFor={id}
+              className={`
+                ${styles.radioLabel}
+                h-10 w-full rounded border flex items-center justify-between px-3
+                ${disabled ? "text-gray-600 cursor-not-allowed border-gray-300" : "text-black cursor-pointer border-gray-400"}
+                ${className}
+              `}
+            >
+              <div className="flex items-center">
+                <span className={`
+                  ${styles.iconContainer}
+                  w-5 h-5 mr-3 text-sm rounded-full inline-flex items-center justify-center
+                  ${disabled ? "bg-gray-200" : "bg-gray-300"}
+              `}>
+                  {isChecked && <FontAwesomeIcon icon={faCheck} style={{ fontSize: "0.625em" }} className={`${styles.radioIcon} text-white`} />}
+                </span>
+                <span className="text-sm whitespace-no-wrap">{text}</span>
+              </div>
+              {disabled && <span className={`inline-block font-medium text-white rounded-full px-3 uppercase bg-orange-500 ${styles.comingSoon}`}>Proximamente</span>}
+            </label>
+          </div>
+        )
+      }}
+    </Field>
+  </>
+);
 
 export default function NewMatch({ visible, onClose, client, history }) {
   const createNewMatch = matchData => {
@@ -33,14 +78,15 @@ export default function NewMatch({ visible, onClose, client, history }) {
     <Modal
       isOpen={visible}
       onRequestClose={onClose}
-      className={styles.modal}
-      overlayClassName={styles.overlay}
+      className={`bg-white w-full sm:max-w-sm mx-6 p-6 rounded text-black -mt-16 ${styles.modal}`}
+      overlayClassName={`w-screen h-screen flex justify-center items-center fixed inset-0 ${styles.modalOverlay}`}
     >
-      <h1 className={styles["title"]}>Nuevo partido</h1>
+      <h1 className="text-2xl text-gray-800 text-center mb-4 font-medium">Nueva partida</h1>
       <Formik
-        initialValues={{ playersCount: 2, points: 30 }}
+        initialValues={{ playersCount: "2", points: "30" }}
         onSubmit={(values, { setSubmitting }) => {
           createNewMatch(
+            // Transform strings to int
             R.evolve({
               playersCount: parseInt,
               points: parseInt
@@ -48,73 +94,57 @@ export default function NewMatch({ visible, onClose, client, history }) {
           );
         }}
       >
-        {({ values, isSubmitting }) => (
-          <Form>
-            <div style={{ marginBottom: 16 }}>
-              <span>Jugadores:</span>
-              <Field
-                className={styles.field}
-                component="div"
-                name="playersCount"
+        {({ values, isSubmitting }) => {
+          return (
+            <Form>
+              <div className="mb-5">
+                <span className="text-base inline-block font-medium mb-2">Jugadores:</span>
+                <div
+                  name="playersCount"
+                  className="flex flex-col space-y-2"
+                >
+                  {[
+                    { value: "2", disabled: false },
+                    { value: "4", disabled: true },
+                    { value: "6", disabled: true }
+                  ].map(({ value, disabled }) => (
+                    <Radio
+                      key={value}
+                      id={`${value}-players`}
+                      name="playersCount"
+                      text={`${value} jugadores`}
+                      value={value}
+                      className="mt-0"
+                      disabled={disabled}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <span className="text-base inline-block font-medium mb-2">Puntos:</span>
+                <div name="points" className="flex flex-col space-y-2">
+                  {["30", "15"].map(points => (
+                    <Radio
+                      key={points}
+                      id={`${points}-points`}
+                      name="points"
+                      value={points}
+                      text={`${points} puntos`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="mt-8"
               >
-                <div className={styles.radioWrapper}>
-                  <input
-                    type="radio"
-                    id="2-players"
-                    defaultChecked={values.playersCount === 2}
-                    name="playersCount"
-                    value={2}
-                  />
-                  <label htmlFor="2-players">2 Jugadores</label>
-                </div>
-                <div className={styles.radioWrapper}>
-                  <input
-                    type="radio"
-                    id="4-players"
-                    defaultChecked={values.playersCount === 4}
-                    name="playersCount"
-                    value={4}
-                  />
-                  <label htmlFor="4-players">4 Jugadores</label>
-                </div>
-              </Field>
-            </div>
-
-            <div>
-              <span>Puntos</span>
-              <Field className={styles.field} component="div" name="points">
-                <div className={styles.radioWrapper}>
-                  <input
-                    type="radio"
-                    id="15-points"
-                    defaultChecked={values.points === 15}
-                    name="points"
-                    value={15}
-                  />
-                  <label htmlFor="15-points">15 Puntos</label>
-                </div>
-                <div className={styles.radioWrapper}>
-                  <input
-                    type="radio"
-                    id="30-points"
-                    defaultChecked={values.points === 30}
-                    name="points"
-                    value={30}
-                  />
-                  <label htmlFor="30-points">30 Puntos</label>
-                </div>
-              </Field>
-            </div>
-
-            <button
-              className={styles.createButton}
-              type="submit"
-              disabled={isSubmitting}
-            >
-              Crear nueva partida
-            </button>
-          </Form>
-        )}
+                Crear
+              </Button>
+            </Form>
+          );
+        }}
       </Formik>
     </Modal>
   );
