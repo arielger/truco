@@ -1,32 +1,19 @@
-import React, { Fragment } from "react";
+import React from "react";
 import * as R from "ramda";
-import { Query, withApollo } from "react-apollo";
+import { withApollo, useQuery } from "react-apollo";
 import { Prompt } from "react-router-dom";
+import Spinner from "react-svg-spinner";
 import gql from "graphql-tag";
 
-import styles from "./Match.module.scss";
-
-import PlayerCards from "./PlayerCards";
-import PlayedCards from "./PlayedCards";
-import Scores from "./Scores";
-import Actions from "./Actions";
-import WinnerModal from "./WinnerModal";
-
-import { getEnvidoFromPlayer } from "../../utils/envido";
-
-const JOIN_MATCH = gql`
-  mutation joinMatch($matchId: ID!) {
-    joinMatch(matchId: $matchId) {
-      id
-    }
-  }
-`;
+import WaitingState from "./WaitingState";
+import GameBoard from "./GameBoard";
 
 const matchFields = `
   status
   playersCount
   points
   creator {
+    id
     name
     avatar
   }
@@ -92,211 +79,89 @@ const MATCH_SUBSCRIPTION = gql`
   }
 `;
 
-const MatchInner = ({
-  user,
-  matchId,
-  joinMatch,
-  subscribeToUpdates,
-  history,
-  client,
-  data,
-  loading,
-  error
-}) => {
+function Match({ history, user, match: urlMatch }) {
+  const matchId = urlMatch.params.matchId;
+
+  const {
+    loading,
+    error,
+    data,
+    subscribeToMore: subscribeToMatchUpdates,
+    client,
+  } = useQuery(MATCH_QUERY, {
+    variables: { id: matchId },
+    fetchPolicy: "cache-and-network",
+  });
+
   React.useEffect(() => {
-    const unsubscribe = subscribeToUpdates();
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  if (loading) return <span>Loading</span>;
-  if (error) return <span>Error</span>;
-
-  const userJoinedMatch = R.pipe(
-    R.map(R.prop("id")),
-    R.includes(user.id)
-  )(data.match.players);
-
-  const notPlayedCards = R.pipe(
-    R.propOr([], "myCards"),
-    R.reject(R.prop("played"))
-  )(data.match)
-  
-  const playedCards = R.pipe(
-    R.find(R.propEq("playerId", user.id)),
-    R.prop("cards"),
-    R.defaultTo([])
-  )(data.match.cardsPlayedByPlayer);
-
-  const currentHand = playedCards.length + 1;
-
-  const isCurrentPlayer = data.match.nextPlayer === user.id;
-
-  const isCurrentEnvidoPlayer = data.match.nextPlayerEnvido === user.id;
-  const currentPlayerEnvidoPoints =
-    isCurrentEnvidoPlayer &&
-    getEnvidoFromPlayer(data.match.myCards.map(({ card }) => card));
-
-  const otherPlayers = R.reject(R.propEq("id", user.id), data.match.players);
-
-  return (
-    <div className={styles["match-inner"]}>
-      {data.match.status === "waiting" && (
-        <div className={styles["waiting-container"]}>
-          <h1>Partida de {data.match.creator.name}</h1>
-          <h2>Esperando jugadores para comenzar la partida...</h2>
-          <div className={styles["avatars"]}>
-            {data.match.players.map(player => (
-              <img
-                key={player.id}
-                className={styles["avatar"]}
-                src={player.avatar}
-                alt={`${player.name} avatar`}
-              />
-            ))}
-            {Array(data.match.playersCount - data.match.players.length)
-              .fill(undefined)
-              .map((_, i) => (
-                <div key={i} className={styles["avatar"]} />
-              ))}
-          </div>
-          {!userJoinedMatch && (
-            <button onClick={joinMatch}>Unirse a la partida</button>
-          )}
-        </div>
-      )}
-      {data.match.status === "playing" && (
-        <Fragment>
-          <Scores
-            moreThanTwoPlayers={data.match.players.length > 2}
-            matchPoints={data.match.points}
-            myPoints={data.match.myPoints}
-            theirPoints={data.match.theirPoints}
-          />
-          <Actions
-            client={client}
-            match={data.match}
-            matchId={matchId}
-            isCurrentPlayer={isCurrentPlayer}
-            nextEnvidoPlayer={data.match.nextPlayerEnvido}
-            isCurrentEnvidoPlayer={isCurrentEnvidoPlayer}
-            envidoPoints={data.match.envidoPoints}
-            cardPlayed={!!playedCards.length}
-            currentPlayerEnvidoPoints={currentPlayerEnvidoPoints}
-            playersCount={data.match.playersCount}
-            currentHand={currentHand}
-          />
-          <PlayedCards
-            cardsPlayedByPlayer={data.match.cardsPlayedByPlayer}
-            userId={user.id}
-          />
-          {otherPlayers.map(player => (
-            <PlayerCards
-              key={player.id}
-              action={
-                R.pathEq(["lastAction", "playerId"], player.id, data.match) &&
-                data.match.lastAction
-              }
-              player={player}
-              isTheirTurn={
-                data.match.nextPlayerEnvido
-                  ? player.id === data.match.nextPlayerEnvido
-                  : player.id === data.match.nextPlayer
-              }
-              position="top" //@todo: Refactor to handle 4 and 6 players
-              playedCards={R.pipe(
-                R.find(R.propEq("playerId", player.id)),
-                R.propOr([], "cards")
-              )(data.match.cardsPlayedByPlayer)}
-            />
-          ))}
-          <PlayerCards
-            client={client}
-            matchId={matchId}
-            player={user}
-            action={
-              R.pathEq(["lastAction", "playerId"], user.id, data.match) &&
-              data.match.lastAction.type
-            }
-            isTheirTurn={
-              data.match.nextPlayerEnvido
-                ? isCurrentEnvidoPlayer
-                : isCurrentPlayer
-            }
-            position="bottom"
-            isCurrentUser={true}
-            enablePlayCards={
-              !data.match.roundWinnerTeam &&
-              data.match.nextPlayer === user.id &&
-              !data.match.nextPlayerEnvido
-            }
-            playedCards={playedCards}
-            notPlayedCards={notPlayedCards}
-          />
-          {data.match.matchWinnerTeam && (
-            <WinnerModal
-              history={history}
-              winnerTeam={data.match.matchWinnerTeam}
-            />
-          )}
-        </Fragment>
-      )}
-    </div>
-  );
-};
-
-function Match({ history, user, match, client }) {
-  const matchId = match.params.matchId;
-
-  const joinMatch = () => {
-    client
-      .mutate({
+    if (data && !loading && !error) {
+      const unsubscribe = subscribeToMatchUpdates({
+        document: MATCH_SUBSCRIPTION,
         variables: { matchId },
-        mutation: JOIN_MATCH
-      })
-      .then(({ data: { joinMatch } }) => {
-        console.log("joinMatch:", joinMatch);
+        // @TODO: Check if we need to update the whole match object for each update
+        updateQuery: (
+          prev,
+          {
+            subscriptionData: {
+              data: { matchUpdated },
+            },
+          }
+        ) => {
+          console.log("matchUpdated:", matchUpdated);
+          return { ...prev, match: matchUpdated };
+        },
       });
-  };
+      return () => {
+        unsubscribe();
+      };
+    }
+  }, [data, loading, error, matchId, subscribeToMatchUpdates]);
+
+  // @TODO: Improve loading and error screens
+  if (loading) {
+    return (
+      <div>
+        <Spinner color="rgba(255,255,255, 0.5)" size="32px" />
+        <span>Cargando partidas</span>
+      </div>
+    );
+  }
+  if (error) return <p>Error</p>;
+
+  const match = R.propOr({}, "match", data);
+
+  const joinedMatch = R.pipe(
+    R.pluck("id"),
+    R.includes(user.id)
+  )(match.players || []);
 
   return (
-    <div className={styles["match"]}>
-      <Prompt message="Estas seguro que quieres abandonar la partida?" />
-      <Query
-        query={MATCH_QUERY}
-        variables={{ id: matchId }}
-        fetchPolicy="cache-and-network"
-      >
-        {({ subscribeToMore, ...result }) => (
-          <MatchInner
-            {...result}
-            user={user}
-            matchId={matchId}
-            history={history}
-            joinMatch={joinMatch}
-            client={client}
-            subscribeToUpdates={() =>
-              subscribeToMore({
-                document: MATCH_SUBSCRIPTION,
-                variables: { matchId },
-                updateQuery: (
-                  prev,
-                  {
-                    subscriptionData: {
-                      data: { matchUpdated }
-                    }
-                  }
-                ) => {
-                  console.log("matchUpdated:", matchUpdated);
-                  return { ...prev, match: matchUpdated };
-                }
-              })
-            }
-          />
-        )}
-      </Query>
-    </div>
+    <>
+      <Prompt
+        when={joinedMatch}
+        message="Estas seguro que quieres abandonar la partida?"
+      />
+      {match.status === "waiting" ? (
+        <WaitingState
+          matchId={matchId}
+          players={match.players}
+          points={match.points}
+          playersCount={match.playersCount}
+          creator={match.creator}
+          joinedMatch={joinedMatch}
+        />
+      ) : match.status === "playing" ? (
+        <GameBoard
+          match={match}
+          client={client}
+          user={user}
+          matchId={matchId}
+          history={history}
+        />
+      ) : match.status === "finished" ? (
+        <span>La partida ya ha finalizado.</span>
+      ) : null}
+    </>
   );
 }
 
