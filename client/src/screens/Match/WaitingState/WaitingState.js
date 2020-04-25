@@ -25,26 +25,34 @@ const JOIN_MATCH = gql`
 // @TODO: Add storybook stories
 
 export default function WaitingState({
+  userId,
   matchId,
   players,
   points,
   playersCount,
   creator,
+  isCreator,
   joinedMatch,
 }) {
   const [joinMatch] = useMutation(JOIN_MATCH, { variables: { matchId } });
 
   return (
     <div className="max-w-md mx-auto w-full p-6">
-      <span className="inline-block mb-1">Partida de:</span>
-      <div className="flex items-center mb-4">
-        <img
-          alt={`${creator.name} avatar`}
-          src={creator.avatar || getRandomAvatar(creator.name)}
-          className="mr-3 w-8 h-8 rounded-full"
-        />
-        <h2 className="font-medium text-3xl">{creator.name}</h2>
-      </div>
+      {isCreator ? (
+        <h2 className="font-medium text-3xl mb-2">Tú partida:</h2>
+      ) : (
+        <>
+          <span className="inline-block mb-1">Partida de:</span>
+          <div className="flex items-center mb-4">
+            <img
+              alt={`${creator.name} avatar`}
+              src={creator.avatar || getRandomAvatar(creator.name)}
+              className="mr-3 w-8 h-8 rounded-full"
+            />
+            <h2 className="font-medium text-3xl">{creator.name}</h2>
+          </div>
+        </>
+      )}
       <div className="flex items-center mb-6">
         <span
           className="border rounded-full px-4 h-8 inline-flex items-center text-sm mr-2"
@@ -82,9 +90,14 @@ export default function WaitingState({
                 <img
                   alt={`${player.name} avatar`}
                   src={player.avatar || getRandomAvatar(player.name)}
-                  className="w-8 h-8 rounded-full mr-2"
+                  className="w-6 h-6 rounded-full mr-3"
                 />
                 <span className="text-black font-medium">{player.name}</span>
+                {userId === player.id && (
+                  <span className="ml-1 text-xs text-gray-500 font-medium">
+                    (Tú)
+                  </span>
+                )}
                 {creator.id === player.id && (
                   <span
                     className="font-medium inline-flex items-center justify-center bg-red-500 uppercase rounded-full ml-auto"
@@ -109,7 +122,10 @@ export default function WaitingState({
         </div>
       </div>
       {joinedMatch ? (
-        <button className="flex items-center justify-center rounded text-red-500 font-medium h-12 border-2 border-red-500 w-full hover:text-red-400 hover:border-red-400">
+        <button
+          onClick={() => {}}
+          className="flex items-center justify-center rounded text-red-500 font-medium h-12 border-2 border-red-500 w-full hover:text-red-400 hover:border-red-400"
+        >
           Abandonar partida
         </button>
       ) : (

@@ -143,11 +143,13 @@ function Match({ history, user, match: urlMatch }) {
       />
       {match.status === "waiting" ? (
         <WaitingState
+          userId={user.id}
           matchId={matchId}
           players={match.players}
           points={match.points}
           playersCount={match.playersCount}
           creator={match.creator}
+          isCreator={user.id === match.creator.id}
           joinedMatch={joinedMatch}
         />
       ) : match.status === "playing" ? (
