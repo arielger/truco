@@ -49,8 +49,8 @@ const handleMatchUpdates = (
   prev,
   {
     subscriptionData: {
-      data: { matchListUpdated }
-    }
+      data: { matchListUpdated },
+    },
   }
 ) => {
   const { type, ...matchData } = matchListUpdated;
@@ -58,21 +58,21 @@ const handleMatchUpdates = (
     case "NEW_MATCH": {
       return {
         ...prev,
-        matches: [...prev.matches, matchData]
+        matches: [...prev.matches, matchData],
       };
     }
     case "UPDATED_MATCH": {
       return {
         ...prev,
-        matches: prev.matches.map(match =>
+        matches: prev.matches.map((match) =>
           matchData.id === match.id ? matchData : match
-        )
+        ),
       };
     }
     case "DELETED_MATCH": {
       return {
         ...prev,
-        matches: R.reject(R.propEq("id", matchData.id))(prev.matches)
+        matches: R.reject(R.propEq("id", matchData.id))(prev.matches),
       };
     }
     default: {
@@ -90,7 +90,11 @@ const Matches = ({ history, client }) => {
   return (
     <div className="flex flex-col p-6 items-center items-stretch w-full md:max-w-md mx-auto">
       <h1 className="text-3xl font-medium mb-8">Partidas</h1>
-      <Button className="mb-8" onClick={() => setNewMatchModalVisible(true)}>
+      <Button
+        styleType="primary"
+        className="mb-8"
+        onClick={() => setNewMatchModalVisible(true)}
+      >
         Crear nueva
       </Button>
       <NewMatch
@@ -109,7 +113,7 @@ const Matches = ({ history, client }) => {
               subscribeToUpdates={() =>
                 subscribeToMore({
                   document: MATCHES_SUBSCRIPTION,
-                  updateQuery: handleMatchUpdates
+                  updateQuery: handleMatchUpdates,
                 })
               }
             />

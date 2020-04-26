@@ -223,7 +223,9 @@ class MatchAPI extends DataSource {
       throw new Error("Can't join your own match");
     }
 
-    if (match.players.includes(userId)) {
+    if (
+      R.pluck("data", match.players).some((playerId) => playerId.equals(userId))
+    ) {
       throw new Error("You already joined this match");
     }
 
@@ -294,6 +296,83 @@ class MatchAPI extends DataSource {
     });
 
     return updatedMatch;
+  }
+
+  // @TODO: Review logic
+  async leaveMatch({ matchId, userId }) {
+    const match = await Match.findById(matchId);
+
+    console.log("match:", JSON.stringify(match));
+
+    if (!match) {
+      throw new Error(`There is no match with the id ${matchId}`);
+    }
+
+    if (
+      !R.pluck("data", match.players).some((playerId) =>
+        playerId.equals(userId)
+      )
+    ) {
+      throw new Error("You have not joined the match");
+    }
+
+    const isCreator = match.creator.equals(userId);
+
+    const updatedMatch = R.pipe(
+      (match) => match.toObject(),
+      formatMatch
+    )(
+      (isCreator
+        ? await Match.findByIdAndDelete(matchId)
+        : await Match.findByIdAndUpdate(
+            matchId,
+            {
+              $pull: {
+                players: { data: userId },
+              },
+            },
+            { new: true }
+          )
+      )
+        .populate("creator")
+        .populate("players.data")
+    );
+
+    console.log("updatedMatch:", JSON.stringify(updatedMatch));
+
+    // Notify the rest of the players who are still in the game
+    const otherPlayersInGame = R.pipe(
+      R.pluck("data"),
+      R.reject(R.equals(userId))
+    )(updatedMatch.players || []);
+
+    console.log("otherPlayersInGame:", otherPlayersInGame);
+
+    console.log("isCreator:", isCreator);
+
+    const event = isCreator
+      ? events.CREATOR_LEFT_GAME
+      : events.PLAYER_LEFT_GAME;
+
+    console.log("event:", event);
+
+    otherPlayersInGame.forEach((playerId) => {
+      console.log("pubsub publish playerId:", playerId);
+      pubsub.publish(event, {
+        // userId: playerId,
+        matchUpdated: {
+          ...updatedMatch,
+          type: event,
+        },
+      });
+    });
+
+    // @TODO: If creator remove match from matches list
+
+    return {
+      success: true,
+      message: "Player left match succesfully",
+    };
   }
 
   async playCard({ matchId, userId, cardId }) {

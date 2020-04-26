@@ -32,7 +32,7 @@
     "react-facebook-login": "^4.1.1",
     "react-google-login": "^5.0.4",
     "react-modal": "^3.8.1",
-    "react-router-dom": "^4.3.1",
+    "react-router-dom": "^5.1.2",
     "react-scripts": "2.1.5",
     "react-svg-spinner": "^1.0.4",
     "storybook-react-router": "^1.0.5",

@@ -1,7 +1,6 @@
 import React from "react";
 import * as R from "ramda";
 import { withApollo, useQuery } from "react-apollo";
-import { Prompt } from "react-router-dom";
 import Spinner from "react-svg-spinner";
 import gql from "graphql-tag";
 
@@ -122,7 +121,7 @@ function Match({ history, user, match: urlMatch }) {
     return (
       <div>
         <Spinner color="rgba(255,255,255, 0.5)" size="32px" />
-        <span>Cargando partidas</span>
+        <span>Cargando partida</span>
       </div>
     );
   }
@@ -137,10 +136,6 @@ function Match({ history, user, match: urlMatch }) {
 
   return (
     <>
-      <Prompt
-        when={joinedMatch}
-        message="Estas seguro que quieres abandonar la partida?"
-      />
       {match.status === "waiting" ? (
         <WaitingState
           userId={user.id}
@@ -151,6 +146,7 @@ function Match({ history, user, match: urlMatch }) {
           creator={match.creator}
           isCreator={user.id === match.creator.id}
           joinedMatch={joinedMatch}
+          showCreatorLeft={false}
         />
       ) : match.status === "playing" ? (
         <GameBoard

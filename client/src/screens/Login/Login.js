@@ -133,6 +133,7 @@ export default function Login() {
             <>
               <input value={playerName} onChange={e => setPlayerName(e.target.value)} className="px-4 border border-gray-400 rounded-lg w-full h-12 shadow mb-3 text-gray-800 focus:outline-none focus:border-blue-400" placeholder="Nombre" />
               <Button
+                styleType="primary"
                 className="mb-4"
                 type="submit"
                 onClick={() => logInAnonymously(client)}

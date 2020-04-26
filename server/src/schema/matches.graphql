@@ -124,6 +124,8 @@ type MatchListUpdate {
 
 enum MatchUpdateType {
   NEW_PLAYER
+  PLAYER_LEFT_GAME
+  CREATOR_LEFT_GAME
   START_GAME
   NEW_MOVE
   NEW_ROUND
@@ -198,6 +200,7 @@ extend type Query {
 extend type Mutation {
   createMatch(playersCount: Int!, points: Int!): Match!
   joinMatch(matchId: ID!): Match!
+  leaveMatch(matchId: ID!): MatchUpdateResponse!
   playCard(matchId: ID!, cardId: ID!): PlayerMatch!
   playTruco(matchId: ID!, action: TrucoActions!): MatchUpdateResponse!
   playEnvido(matchId: ID!, action: EnvidoActions!): MatchUpdateResponse!
