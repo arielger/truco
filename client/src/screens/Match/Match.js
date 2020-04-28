@@ -81,6 +81,9 @@ const MATCH_SUBSCRIPTION = gql`
 function Match({ history, user, match: urlMatch }) {
   const matchId = urlMatch.params.matchId;
 
+  const [showCreatorLeft, setShowCreatorLeft] = React.useState(false);
+  const [isSubscriptionSet, setIsSubscriptionSet] = React.useState(false);
+
   const {
     loading,
     error,
@@ -89,32 +92,36 @@ function Match({ history, user, match: urlMatch }) {
     client,
   } = useQuery(MATCH_QUERY, {
     variables: { id: matchId },
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "network-only",
   });
 
   React.useEffect(() => {
-    if (data && !loading && !error) {
-      const unsubscribe = subscribeToMatchUpdates({
-        document: MATCH_SUBSCRIPTION,
-        variables: { matchId },
-        // @TODO: Check if we need to update the whole match object for each update
-        updateQuery: (
-          prev,
-          {
-            subscriptionData: {
-              data: { matchUpdated },
-            },
-          }
-        ) => {
-          console.log("matchUpdated:", matchUpdated);
-          return { ...prev, match: matchUpdated };
-        },
-      });
-      return () => {
-        unsubscribe();
-      };
-    }
-  }, [data, loading, error, matchId, subscribeToMatchUpdates]);
+    console.log("Subscribe to match updates");
+    const unsubscribe = subscribeToMatchUpdates({
+      document: MATCH_SUBSCRIPTION,
+      variables: { matchId },
+      // @TODO: Check if we need to update the whole match object for each update
+      updateQuery: (
+        prev,
+        {
+          subscriptionData: {
+            data: { matchUpdated },
+          },
+        }
+      ) => {
+        console.log("matchUpdated:", matchUpdated);
+
+        if (R.propEq("type", "CREATOR_LEFT_GAME", matchUpdated)) {
+          setShowCreatorLeft(true);
+        }
+
+        return { ...prev, match: matchUpdated };
+      },
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [matchId, subscribeToMatchUpdates]);
 
   // @TODO: Improve loading and error screens
   if (loading) {
@@ -146,7 +153,7 @@ function Match({ history, user, match: urlMatch }) {
           creator={match.creator}
           isCreator={user.id === match.creator.id}
           joinedMatch={joinedMatch}
-          showCreatorLeft={false}
+          showCreatorLeft={showCreatorLeft}
         />
       ) : match.status === "playing" ? (
         <GameBoard

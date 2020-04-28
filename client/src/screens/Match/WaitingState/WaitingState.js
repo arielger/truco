@@ -77,15 +77,13 @@ export default function WaitingState({
   const [joinMatch] = useMutation(JOIN_MATCH, { variables: { matchId } });
   const [leaveMatch] = useMutation(LEAVE_MATCH, { variables: { matchId } });
 
-  // @TODO: Finish logic
   React.useEffect(() => {
     return () => {
-      if (!showCreatorLeft) {
-        console.log("leave match:");
+      if (joinedMatch && !showCreatorLeft) {
         leaveMatch();
       }
     };
-  }, [showCreatorLeft, leaveMatch]);
+  }, []); //eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>

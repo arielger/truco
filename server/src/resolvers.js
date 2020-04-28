@@ -115,11 +115,8 @@ module.exports = {
         (payload, variables, context) => {
           const isSubscribedToMatch =
             variables.matchId === payload.matchUpdated.id;
-          console.log("variables.matchId:", variables.matchId);
-          console.log("payload.matchUpdated.id:", payload.matchUpdated.id);
+
           // If update is only for one user (e.g. when the update contains the user cards)
-          console.log("payload.userId:", payload.userId);
-          console.log("context.userId:", context.userId);
           const isUpdateForUser = payload.userId
             ? payload.userId === context.userId
             : true;

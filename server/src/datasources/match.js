@@ -302,8 +302,6 @@ class MatchAPI extends DataSource {
   async leaveMatch({ matchId, userId }) {
     const match = await Match.findById(matchId);
 
-    console.log("match:", JSON.stringify(match));
-
     if (!match) {
       throw new Error(`There is no match with the id ${matchId}`);
     }
@@ -322,9 +320,9 @@ class MatchAPI extends DataSource {
       (match) => match.toObject(),
       formatMatch
     )(
-      (isCreator
-        ? await Match.findByIdAndDelete(matchId)
-        : await Match.findByIdAndUpdate(
+      await (isCreator
+        ? Match.findByIdAndDelete(matchId)
+        : Match.findByIdAndUpdate(
             matchId,
             {
               $pull: {
@@ -338,28 +336,19 @@ class MatchAPI extends DataSource {
         .populate("players.data")
     );
 
-    console.log("updatedMatch:", JSON.stringify(updatedMatch));
-
     // Notify the rest of the players who are still in the game
     const otherPlayersInGame = R.pipe(
       R.pluck("data"),
       R.reject(R.equals(userId))
     )(updatedMatch.players || []);
 
-    console.log("otherPlayersInGame:", otherPlayersInGame);
-
-    console.log("isCreator:", isCreator);
-
     const event = isCreator
       ? events.CREATOR_LEFT_GAME
       : events.PLAYER_LEFT_GAME;
 
-    console.log("event:", event);
-
     otherPlayersInGame.forEach((playerId) => {
-      console.log("pubsub publish playerId:", playerId);
       pubsub.publish(event, {
-        // userId: playerId,
+        userId: playerId,
         matchUpdated: {
           ...updatedMatch,
           type: event,
