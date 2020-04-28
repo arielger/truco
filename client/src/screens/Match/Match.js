@@ -82,7 +82,6 @@ function Match({ history, user, match: urlMatch }) {
   const matchId = urlMatch.params.matchId;
 
   const [showCreatorLeft, setShowCreatorLeft] = React.useState(false);
-  const [isSubscriptionSet, setIsSubscriptionSet] = React.useState(false);
 
   const {
     loading,

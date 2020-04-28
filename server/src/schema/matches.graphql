@@ -107,9 +107,9 @@ type PlayerMatch {
 }
 
 enum MatchListUpdateType {
-  NEW_MATCH
-  UPDATED_MATCH
-  DELETED_MATCH
+  MATCH_ADDED
+  MATCH_UPDATED
+  MATCH_REMOVED
 }
 
 type MatchListUpdate {

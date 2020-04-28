@@ -201,7 +201,7 @@ class MatchAPI extends DataSource {
 
     pubsub.publish(events.MATCH_ADDED, {
       matchListUpdated: {
-        type: "NEW_MATCH",
+        type: events.MATCH_ADDED,
         ...newMatchData,
       },
     });
@@ -287,10 +287,13 @@ class MatchAPI extends DataSource {
       });
     }
 
+    const event = startGame ? events.MATCH_REMOVED : events.MATCH_UPDATED;
+
     // If the match is full remove it from the list of matches
-    pubsub.publish(startGame ? events.MATCH_REMOVED : events.MATCH_UPDATED, {
+    pubsub.publish(event, {
       matchListUpdated: {
-        type: startGame ? "DELETED_MATCH" : "UPDATED_MATCH",
+        // @TODO: There is no need to send the whole match if it's removed from list
+        type: event,
         ...updatedMatch,
       },
     });
@@ -342,21 +345,31 @@ class MatchAPI extends DataSource {
       R.reject(R.equals(userId))
     )(updatedMatch.players || []);
 
-    const event = isCreator
+    const matchDetailEvent = isCreator
       ? events.CREATOR_LEFT_GAME
       : events.PLAYER_LEFT_GAME;
 
     otherPlayersInGame.forEach((playerId) => {
-      pubsub.publish(event, {
+      pubsub.publish(matchDetailEvent, {
         userId: playerId,
         matchUpdated: {
           ...updatedMatch,
-          type: event,
+          type: matchDetailEvent,
         },
       });
     });
 
-    // @TODO: If creator remove match from matches list
+    const matchListEvent = isCreator
+      ? events.MATCH_REMOVED
+      : events.MATCH_UPDATED;
+
+    pubsub.publish(matchListEvent, {
+      matchListUpdated: {
+        // @TODO: There is no need to send the whole match if it's removed from list
+        type: matchListEvent,
+        ...updatedMatch,
+      },
+    });
 
     return {
       success: true,

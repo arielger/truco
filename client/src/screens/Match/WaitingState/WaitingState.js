@@ -77,6 +77,7 @@ export default function WaitingState({
   const [joinMatch] = useMutation(JOIN_MATCH, { variables: { matchId } });
   const [leaveMatch] = useMutation(LEAVE_MATCH, { variables: { matchId } });
 
+  // @TODO: Fix React.useEffect, sometimes it is not executing leaveMatch
   React.useEffect(() => {
     return () => {
       if (joinedMatch && !showCreatorLeft) {
@@ -88,7 +89,7 @@ export default function WaitingState({
   return (
     <>
       <Prompt
-        when={!showCreatorLeft}
+        when={joinedMatch && !showCreatorLeft}
         message={`Estas seguro que deseas abandonar la partida?`}
       />
       <CreatorLeftModal isVisible={showCreatorLeft} history={history} />

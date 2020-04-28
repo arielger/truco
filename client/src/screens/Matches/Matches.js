@@ -55,13 +55,13 @@ const handleMatchUpdates = (
 ) => {
   const { type, ...matchData } = matchListUpdated;
   switch (type) {
-    case "NEW_MATCH": {
+    case "MATCH_ADDED": {
       return {
         ...prev,
         matches: [...prev.matches, matchData],
       };
     }
-    case "UPDATED_MATCH": {
+    case "MATCH_UPDATED": {
       return {
         ...prev,
         matches: prev.matches.map((match) =>
@@ -69,7 +69,7 @@ const handleMatchUpdates = (
         ),
       };
     }
-    case "DELETED_MATCH": {
+    case "MATCH_REMOVED": {
       return {
         ...prev,
         matches: R.reject(R.propEq("id", matchData.id))(prev.matches),
