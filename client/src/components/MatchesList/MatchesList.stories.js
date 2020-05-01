@@ -10,7 +10,7 @@ const Wrapper = ({ children }) => <div style={{ padding: 60 }}>{children}</div>;
 
 const createRandomPlayer = () => ({
   name: faker.name.findName(),
-  avatar: faker.image.avatar()
+  avatar: faker.image.avatar(),
 });
 
 const createRandomMatch = () => {
@@ -21,12 +21,14 @@ const createRandomMatch = () => {
     id: faker.random.uuid(),
     players: R.times(createRandomPlayer, playersCount),
     playersCount,
-    points: randomItem([15, 30])
+    points: randomItem([15, 30]),
   };
 };
 
 storiesOf("MatchesList", module)
-  .add("loading", () => <MatchesList loading={true} />)
+  .add("loading", () => (
+    <MatchesList loading={true} subscribeToUpdates={() => () => {}} />
+  ))
   .add("with matches", () => (
     <Wrapper>
       <MatchesList

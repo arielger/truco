@@ -7,8 +7,7 @@ const Wrapper = ({ children }) => (
     style={{
       width: "100vh",
       height: "100vh",
-      backgroundColor: "#131418",
-      position: "relative"
+      position: "relative",
     }}
   >
     {children}
@@ -33,7 +32,7 @@ storiesOf("Actions", module)
           "REJECT",
           "ENVIDO",
           "REAL_ENVIDO",
-          "FALTA_ENVIDO"
+          "FALTA_ENVIDO",
         ]}
       />
     </Wrapper>
@@ -55,7 +54,7 @@ storiesOf("Actions", module)
           "REJECT",
           "ENVIDO",
           "REAL_ENVIDO",
-          "FALTA_ENVIDO"
+          "FALTA_ENVIDO",
         ]}
       />
     </Wrapper>

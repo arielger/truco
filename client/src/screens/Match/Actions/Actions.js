@@ -5,11 +5,10 @@ import ActionsList from "./ActionsList";
 import {
   getEnvidoActions,
   getTrucoActions,
-  getSayEnvidoActions
+  getSayEnvidoActions,
 } from "./utils";
 
 export default function Actions({
-  client,
   match,
   matchId,
   isCurrentPlayer,
@@ -19,7 +18,7 @@ export default function Actions({
   envidoPoints,
   cardPlayed,
   currentPlayerEnvidoPoints,
-  playersCount
+  playersCount,
 }) {
   if (nextEnvidoPlayer && !isCurrentEnvidoPlayer) {
     return null;
@@ -30,13 +29,12 @@ export default function Actions({
       envidoPoints,
       cardPlayed,
       currentPlayerEnvidoPoints,
-      playersCount
+      playersCount,
     });
 
     return (
       <ActionsList
         matchId={matchId}
-        client={client}
         envidoPoints={currentPlayerEnvidoPoints}
         sayEnvidoActions={sayEnvidoActions}
       />
@@ -61,21 +59,18 @@ export default function Actions({
         R.pathEq(["envido", "team"], "we"),
         R.pathEq(["envido", "status"], "PENDING")
       ),
-      R.pipe(
-        R.path(["envido", "list"]),
-        R.last
-      )
+      R.pipe(R.path(["envido", "list"]), R.last),
     ],
     [
       R.both(
         R.pathEq(["truco", "team"], "we"),
         R.pathEq(["truco", "status"], "PENDING")
       ),
-      R.path(["truco", "type"])
-    ]
+      R.path(["truco", "type"]),
+    ],
   ])({
     envido: R.propOr({}, "envido", match),
-    truco: R.propOr({}, "truco", match)
+    truco: R.propOr({}, "truco", match),
   });
 
   if (
@@ -88,13 +83,12 @@ export default function Actions({
   return (
     <ActionsList
       matchId={matchId}
-      client={client}
       {...(ourAction
         ? { ourAction }
         : {
             theirAction: envidoOpponentAction || trucoOpponentAction,
             envidoActions: !trucoOpponentAction && envidoActions,
-            trucoActions: !envidoOpponentAction && trucoActions
+            trucoActions: !envidoOpponentAction && trucoActions,
           })}
     />
   );

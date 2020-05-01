@@ -16,7 +16,7 @@ const PLAY_TRUCO = gql`
 `;
 
 const PLAY_ENVIDO = gql`
-  mutation playTruco($matchId: ID!, $action: EnvidoActions!) {
+  mutation playEnvido($matchId: ID!, $action: EnvidoActions!) {
     playEnvido(matchId: $matchId, action: $action) {
       success
       message
@@ -42,6 +42,13 @@ const LEAVE_ROUND = gql`
   }
 `;
 
+const ActionButton = ({ className = "", ...props }) => (
+  <button
+    {...props}
+    className={`${styles.actionButton} w-32 h-8 text-sm inline-flex items-center justify-center text-gray-100 border border-black rounded hover:bg-black focus:bg-black transition-colors duration-200 ${className}`}
+  ></button>
+);
+
 export default function ActionsList({
   matchId,
   ourAction,
@@ -49,7 +56,7 @@ export default function ActionsList({
   sayEnvidoActions = [],
   envidoPoints,
   envidoActions = [],
-  trucoActions = []
+  trucoActions = [],
 }) {
   const [playTruco] = useMutation(PLAY_TRUCO);
   const [playEnvido] = useMutation(PLAY_ENVIDO);
@@ -57,74 +64,66 @@ export default function ActionsList({
   const [leaveRound] = useMutation(LEAVE_ROUND);
 
   return (
-    <div className={styles.actions}>
+    <div className="flex flex-col items-center">
       {theirAction && (
-        <div className={styles.playerAction}>
-          Cantaron <span>{actionsToText[theirAction]}</span>
+        <div className="flex flex-col items-center mb-4">
+          <span className="text-sm">Cantaron </span>
+          <span className="uppercase text-xl font-semibold">
+            {actionsToText[theirAction]}
+          </span>
         </div>
       )}
       {ourAction && (
-        <>
-          <div className={styles.playerAction}>
-            Cantaste <span>{actionsToText[ourAction]}</span>
-          </div>
-          <div className={styles.waitForResponse}>
-            <Spinner color="rgba(255,255,255, 0.5)" />
-            <span>Esperando respuesta</span>
-          </div>
-        </>
+        <div className="flex flex-col items-center">
+          <span className="text-sm">Cantaste </span>
+          <span className="uppercase text-xl font-semibold mb-6">
+            {actionsToText[ourAction]}
+          </span>
+          <Spinner color="rgba(255,255,255, 0.5)" />
+          <span className="text-xs mt-2 text-gray-200">
+            Esperando respuesta
+          </span>
+        </div>
       )}
-      {sayEnvidoActions && sayEnvidoActions.length > 0 && (
-        <div className={styles.actionsType}>
-          {sayEnvidoActions.map(action => (
-            <button
+      <div className="flex flex-col items-center space-y-2">
+        {sayEnvidoActions &&
+          sayEnvidoActions.length > 0 &&
+          sayEnvidoActions.map((action) => (
+            <ActionButton
               key={action}
-              className={styles.action}
               onClick={() => sayEnvido({ variables: { matchId, action } })}
             >
               {actionsToText[action].replace("{{points}}", envidoPoints)}
-            </button>
+            </ActionButton>
           ))}
-        </div>
-      )}
-      {envidoActions && envidoActions.length > 0 && (
-        <div className={styles.actionsType}>
-          {envidoActions.map(action => (
-            <button
+        {envidoActions &&
+          envidoActions.length > 0 &&
+          envidoActions.map((action) => (
+            <ActionButton
               key={action}
-              className={styles.action}
               onClick={() => playEnvido({ variables: { matchId, action } })}
             >
               {actionsToText[action]}
-            </button>
+            </ActionButton>
           ))}
-        </div>
-      )}
-      {envidoActions.length >= 1 && trucoActions.length >= 1 && (
-        <span className={styles.divider} />
-      )}
-      {trucoActions && trucoActions.length > 0 && (
-        <div className={styles.actionsType}>
-          {trucoActions.map(action => (
-            <button
+        {trucoActions &&
+          trucoActions.length > 0 &&
+          trucoActions.map((action) => (
+            <ActionButton
               key={action}
-              className={styles.action}
               onClick={() => playTruco({ variables: { matchId, action } })}
             >
               {actionsToText[action]}
-            </button>
+            </ActionButton>
           ))}
-        </div>
-      )}
-      <span className={styles.divider} />
-      <div className={styles.actionsType}>
-        <button
-          key="leaveRound"
-          className={styles.action}
-          onClick={() => leaveRound({ variables: { matchId } })}
-        >
-          {actionsToText.LEAVE_ROUND}
-        </button>
+        {!ourAction && (
+          <ActionButton
+            key="leaveRound"
+            onClick={() => leaveRound({ variables: { matchId } })}
+          >
+            {actionsToText.LEAVE_ROUND}
+          </ActionButton>
+        )}
       </div>
     </div>
   );
