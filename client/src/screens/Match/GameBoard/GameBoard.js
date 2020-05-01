@@ -41,7 +41,6 @@ const GameBoard = ({ match, client, user, matchId, history }) => {
         theirPoints={match.theirPoints}
       />
       <Actions
-        client={client}
         match={match}
         matchId={matchId}
         isCurrentPlayer={isCurrentPlayer}

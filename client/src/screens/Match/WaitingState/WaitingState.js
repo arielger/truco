@@ -77,15 +77,6 @@ export default function WaitingState({
   const [joinMatch] = useMutation(JOIN_MATCH, { variables: { matchId } });
   const [leaveMatch] = useMutation(LEAVE_MATCH, { variables: { matchId } });
 
-  // @TODO: Fix React.useEffect, sometimes it is not executing leaveMatch
-  React.useEffect(() => {
-    return () => {
-      if (joinedMatch && !showCreatorLeft) {
-        leaveMatch();
-      }
-    };
-  }, []); //eslint-disable-line react-hooks/exhaustive-deps
-
   return (
     <>
       <Prompt
@@ -183,7 +174,7 @@ export default function WaitingState({
         {joinedMatch ? (
           <button
             onClick={() => {
-              // If WaitingState is unmounted we will execute leaveMatch
+              leaveMatch();
               history.push("/partidas");
             }}
             className="flex items-center justify-center rounded text-red-500 font-medium h-12 border-2 border-red-500 w-full hover:text-red-400 hover:border-red-400"

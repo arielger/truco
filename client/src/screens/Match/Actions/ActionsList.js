@@ -64,7 +64,7 @@ export default function ActionsList({
   const [leaveRound] = useMutation(LEAVE_ROUND);
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center absolute left-0 bottom-0 m-2">
       {theirAction && (
         <div className="flex flex-col items-center mb-4">
           <span className="text-sm">Cantaron </span>
@@ -79,10 +79,12 @@ export default function ActionsList({
           <span className="uppercase text-xl font-semibold mb-6">
             {actionsToText[ourAction]}
           </span>
-          <Spinner color="rgba(255,255,255, 0.5)" />
-          <span className="text-xs mt-2 text-gray-200">
-            Esperando respuesta
-          </span>
+          <div className="flex flex-col items-center p-2">
+            <Spinner color="rgba(255,255,255, 0.5)" />
+            <span className="text-xs mt-2 text-gray-200">
+              Esperando respuesta
+            </span>
+          </div>
         </div>
       )}
       <div className="flex flex-col items-center space-y-2">
