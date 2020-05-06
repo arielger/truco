@@ -1,11 +1,8 @@
 import React from "react";
 import * as R from "ramda";
-import cs from "classnames";
 
 import Card from "../../../components/Card";
 import cards from "../../../utils/cards";
-
-import styles from "./PlayedCards.module.scss";
 
 const getCardZIndex = ({ card, cardsByPlayer, index }) => {
   return R.pipe(
@@ -25,28 +22,23 @@ export default function PlayedCards({ cardsPlayedByPlayer, userId }) {
   )(cardsPlayedByPlayer);
 
   return (
-    <div className={styles.playedCards}>
+    <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 space-y-8">
       {cardsByPlayer.map(({ playerId, cards, isCurrentPlayer }) => (
-        <div
-          key={playerId}
-          className={cs(styles.playerCards, {
-            [styles.isCurrentPlayer]: isCurrentPlayer
-          })}
-        >
+        <div key={playerId} className="flex items-center space-x-3">
           {cards.map((card, index) => (
             <Card
+              width={80}
               key={card}
               card={card}
               style={{
                 zIndex: getCardZIndex({ card, cardsByPlayer, index }),
-                margin: 0
               }}
             />
           ))}
           {Array(3 - cards.length)
             .fill(undefined)
             .map((_, i) => (
-              <Card key={i} isPlaceholder style={{ margin: 0 }} />
+              <Card width={80} key={i} isPlaceholder />
             ))}
         </div>
       ))}

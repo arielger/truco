@@ -1,7 +1,8 @@
 import * as R from "ramda";
 import React from "react";
 
-import PlayerCards from "../PlayerCards";
+import YourCards from "../YourCards";
+import OtherPlayer from "../OtherPlayer";
 import PlayedCards from "../PlayedCards";
 import Scores from "../Scores";
 import Actions from "../Actions";
@@ -9,7 +10,7 @@ import WinnerModal from "../WinnerModal";
 
 import { getEnvidoFromPlayer } from "../../../utils/envido";
 
-const GameBoard = ({ match, client, user, matchId, history }) => {
+const GameBoard = ({ match, user, matchId, history }) => {
   const notPlayedCards = R.pipe(
     R.propOr([], "myCards"),
     R.reject(R.prop("played"))
@@ -33,7 +34,7 @@ const GameBoard = ({ match, client, user, matchId, history }) => {
   const otherPlayers = R.reject(R.propEq("id", user.id), match.players);
 
   return (
-    <div>
+    <div className="w-screen h-screen relative overflow-hidden">
       <Scores
         moreThanTwoPlayers={match.players.length > 2}
         matchPoints={match.points}
@@ -57,38 +58,28 @@ const GameBoard = ({ match, client, user, matchId, history }) => {
         userId={user.id}
       />
       {otherPlayers.map((player) => (
-        <PlayerCards
+        <OtherPlayer
           key={player.id}
-          action={
-            R.pathEq(["lastAction", "playerId"], player.id, match) &&
-            match.lastAction
-          }
           player={player}
-          isTheirTurn={
-            match.nextPlayerEnvido
-              ? player.id === match.nextPlayerEnvido
-              : player.id === match.nextPlayer
-          }
           position="top" //@todo: Refactor to handle 4 and 6 players
           playedCards={R.pipe(
             R.find(R.propEq("playerId", player.id)),
             R.propOr([], "cards")
           )(match.cardsPlayedByPlayer)}
+          isTheirTurn={
+            match.nextPlayerEnvido
+              ? player.id === match.nextPlayerEnvido
+              : player.id === match.nextPlayer
+          }
+          action={
+            R.pathEq(["lastAction", "playerId"], player.id, match) &&
+            match.lastAction
+          }
         />
       ))}
-      <PlayerCards
-        client={client}
+      <YourCards
         matchId={matchId}
         player={user}
-        action={
-          R.pathEq(["lastAction", "playerId"], user.id, match) &&
-          match.lastAction.type
-        }
-        isTheirTurn={
-          match.nextPlayerEnvido ? isCurrentEnvidoPlayer : isCurrentPlayer
-        }
-        position="bottom"
-        isCurrentUser={true}
         enablePlayCards={
           !match.roundWinnerTeam &&
           match.nextPlayer === user.id &&

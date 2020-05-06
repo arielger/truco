@@ -1,0 +1,14 @@
+.actionDialog {
+  &:before {
+    content: '';
+    width: 0;
+    margin-right: auto;
+    margin-left: auto;
+    border: 6px solid transparent;
+    border-bottom-color: white;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
