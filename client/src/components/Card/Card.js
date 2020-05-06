@@ -3,16 +3,17 @@ import cs from "classnames";
 
 import styles from "./Card.module.scss";
 
-const cardSize = {
+const cardOriginalSize = {
   width: 117,
-  height: 180
+  height: 180,
+  background: 1404,
 };
 
 const stepCardYOffset = {
   GOLD: 0,
   CUP: 1,
   SWORD: 2,
-  BASTO: 3
+  BASTO: 3,
 };
 
 export default function Card({
@@ -20,29 +21,37 @@ export default function Card({
   isHidden,
   isDisabled,
   card,
+  width = 117,
   onClick = () => {},
-  style
+  style,
 }) {
+  const sizeFactor = width / cardOriginalSize.width;
+  const cardSize = {
+    width: cardOriginalSize.width * sizeFactor,
+    height: cardOriginalSize.height * sizeFactor,
+  };
+
   if (isHidden || isPlaceholder) {
     return (
       <div
         className={styles.card}
         style={{
           ...cardSize,
+          backgroundSize: `${cardOriginalSize.background * sizeFactor}px`,
           ...(isHidden
             ? {
-                backgroundPosition: `${-1 * cardSize.width}px ${-4 *
-                  cardSize.height}px`
+                backgroundPosition: `${-1 * cardSize.width}px ${
+                  -4 * cardSize.height
+                }px`,
               }
             : {}),
           ...(isPlaceholder
             ? {
-                border: "1px dashed rgba(255,255,255,0.2)",
-                background: "none",
-                width: cardSize.width - 2
+                background: "#313336",
+                width: cardSize.width - 2,
               }
             : {}),
-          ...style
+          ...style,
         }}
       />
     );
@@ -55,17 +64,18 @@ export default function Card({
       onClick={() => onClick(card)}
       className={cs({
         [styles.card]: true,
-        [styles.disabled]: isDisabled
+        [styles.disabled]: isDisabled,
       })}
       style={{
         ...cardSize,
         cursor: onClick ? "pointer" : "initial",
+        backgroundSize: `${cardOriginalSize.background * sizeFactor}px`,
         backgroundPosition: isHidden
           ? `${-1 * cardSize.width}px ${-4 * cardSize.height}px`
-          : `${(cardNumber - 1) * -cardSize.width}px ${-stepCardYOffset[
-              cardStep
-            ] * cardSize.height}px`,
-        ...style
+          : `${(cardNumber - 1) * -cardSize.width}px ${
+              -stepCardYOffset[cardStep] * cardSize.height
+            }px`,
+        ...style,
       }}
     />
   );
