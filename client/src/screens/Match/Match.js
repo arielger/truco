@@ -125,7 +125,7 @@ function Match({ history, user, match: urlMatch }) {
   // @TODO: Improve loading and error screens
   if (loading) {
     return (
-      <div>
+      <div className="flex flex-col space-y-4 items-center justify-center h-screen">
         <Spinner color="rgba(255,255,255, 0.5)" size="32px" />
         <span>Cargando partida</span>
       </div>
