@@ -1,68 +1,30 @@
 import React from "react";
-import cs from "classnames";
-import * as R from "ramda";
 
-import styles from "./Scores.module.scss";
-
-const getTeamPointsGroups = (teamPoints, matchPoints) => {
-  const points = teamPoints > matchPoints ? matchPoints : teamPoints;
-  const isMatchFinished = points === matchPoints;
-  const completedGroups = Math.floor(points / 5);
-  const remainingPoints = !isMatchFinished && points % 5;
-  return R.pipe(
-    R.splitEvery(3),
-    R.when(lists => lists.length === 2, R.intersperse({ isSeparator: true })),
-    R.flatten
-  )([
-    ...Array(completedGroups).fill({ points: 5 }),
-    ...(isMatchFinished ? [] : [{ points: remainingPoints }]),
-    ...Array(6 - (completedGroups + (isMatchFinished ? 0 : 1))).fill({
-      points: 0
-    })
-  ]);
+const TeamScore = ({ text, points }) => {
+  return (
+    <div
+      style={{ backgroundColor: "#4F4F4F" }}
+      className="flex items-center justify-between rounded py-1 px-2 text-sm relative"
+    >
+      <span className="font-medium">{text}</span>
+      <span className="font-semibold">{points}</span>
+    </div>
+  );
 };
 
-const PointsGroup = ({ teamPoints, matchPoints }) =>
-  getTeamPointsGroups(teamPoints, matchPoints).map(
-    ({ points, isSeparator }, index) => {
-      if (isSeparator)
-        return <div key="separator" className={styles.separator} />;
-      return (
-        <div
-          key={index}
-          className={cs(styles.pointsGroup, {
-            [styles.borderLeft]: points >= 1,
-            [styles.borderTop]: points >= 2,
-            [styles.borderBottom]: points >= 3,
-            [styles.borderRight]: points >= 4,
-            [styles.borderMiddle]: points === 5
-          })}
-        />
-      );
-    }
-  );
-
-// @todo: Add animation to new points
 export default function Scores({
-  matchPoints,
+  // matchPoints,
   myPoints,
   theirPoints,
-  moreThanTwoPlayers
+  moreThanTwoPlayers,
 }) {
   return (
-    <div className={styles.scores}>
-      <div className={styles.player}>
-        <h2 className={styles.playerTitle}>
-          {moreThanTwoPlayers ? "Nos" : "Yo"}
-        </h2>
-        <PointsGroup teamPoints={myPoints} matchPoints={matchPoints} />
-      </div>
-      <div className={styles.player}>
-        <h2 className={styles.playerTitle}>
-          {moreThanTwoPlayers ? "Ellos" : "Él"}
-        </h2>
-        <PointsGroup teamPoints={theirPoints} matchPoints={matchPoints} />
-      </div>
+    <div className="flex flex-col w-20 m-3 space-y-2">
+      <TeamScore text={moreThanTwoPlayers ? "Nos" : "Yo"} points={myPoints} />
+      <TeamScore
+        text={moreThanTwoPlayers ? "Ellos" : "Él"}
+        points={theirPoints}
+      />
     </div>
   );
 }
