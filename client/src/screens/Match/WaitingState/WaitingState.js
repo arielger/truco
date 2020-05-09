@@ -18,6 +18,7 @@ import { getRandomAvatar } from "../../../utils/player";
 import styles from "./WaitingState.module.scss";
 
 import Button from "../../../components/Button";
+import Alert from "../../../components/Alert";
 
 const JOIN_MATCH = gql`
   mutation joinMatch($matchId: ID!) {
@@ -119,12 +120,12 @@ export default function WaitingState({
             <span>Sin flor</span>
           </span>
         </div>
-        <div className="flex items-center text-white bg-orange-500 rounded h-10 px-4 whitespace-no-wrap mb-10">
-          <FontAwesomeIcon icon={faHourglassHalf} className="mr-3" />
-          <span className="text-white font-medium text-sm">
-            Esperando jugadores para empezar
-          </span>
-        </div>
+        <Alert
+          type="warning"
+          message="Esperando jugadores para empezar"
+          icon={faHourglassHalf}
+          className="mb-10"
+        />
         <div className="mb-10">
           <h2 className="font-medium text-xl mb-5">Jugadores</h2>
           <div className="flex flex-col items-stretch relative">

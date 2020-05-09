@@ -132,7 +132,7 @@ export default function NewMatch({ visible, onClose, client, history }) {
                 <div name="playersCount" className="flex flex-col space-y-2">
                   {[
                     { value: "2", disabled: false },
-                    { value: "4", disabled: false },
+                    { value: "4", disabled: true },
                     { value: "6", disabled: true },
                   ].map(({ value, disabled }) => (
                     <Radio
