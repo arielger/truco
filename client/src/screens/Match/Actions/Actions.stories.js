@@ -5,7 +5,7 @@ import ActionsList from "./ActionsList";
 const Wrapper = ({ children }) => (
   <div
     style={{
-      width: "100vh",
+      width: "400px",
       height: "100vh",
       position: "relative",
     }}
@@ -18,59 +18,101 @@ storiesOf("Actions", module)
   .add("start game actions", () => (
     <Wrapper>
       <ActionsList
-        envidoActions={["ENVIDO", "REAL_ENVIDO", "FALTA_ENVIDO"]}
-        trucoActions={["TRUCO"]}
-      />
-    </Wrapper>
-  ))
-  .add("answer envido action", () => (
-    <Wrapper>
-      <ActionsList
-        actionToAnswerTo="ENVIDO"
-        envidoActions={[
-          "ACCEPT",
-          "REJECT",
-          "ENVIDO",
-          "REAL_ENVIDO",
-          "FALTA_ENVIDO",
+        actions={[
+          {
+            text: "Envido",
+            onClick: () => {
+              console.log("Play envido");
+            },
+          },
+          {
+            text: "Truco",
+            onClick: () => {
+              console.log("Play truco");
+            },
+          },
+          {
+            text: "Irse al mazo",
+            onClick: () => {
+              console.log("Irse al mazo");
+            },
+          },
         ]}
       />
     </Wrapper>
   ))
-  .add("answer truco action", () => (
+  .add("answer envido", () => (
     <Wrapper>
       <ActionsList
-        theirAction="TRUCO"
-        envidoActions={["ACCEPT", "REJECT", "RETRUCO"]}
-      />
-    </Wrapper>
-  ))
-  .add("answer envido action", () => (
-    <Wrapper>
-      <ActionsList
-        theirAction="ENVIDO"
-        envidoActions={[
-          "ACCEPT",
-          "REJECT",
-          "ENVIDO",
-          "REAL_ENVIDO",
-          "FALTA_ENVIDO",
+        actions={[
+          {
+            type: "ACCEPT",
+            text: "Quiero",
+            position: "top",
+            onClick: () => {},
+          },
+          {
+            type: "REJECT",
+            text: "No quiero",
+            position: "top",
+            onClick: () => {},
+          },
+          {
+            text: "Envido",
+            onClick: () => {},
+          },
+          {
+            text: "Real envido",
+            onClick: () => {},
+          },
+          {
+            text: "Falta envido",
+            onClick: () => {},
+          },
         ]}
       />
     </Wrapper>
   ))
-  .add("wait for truco response", () => (
+  .add("answer truco", () => (
     <Wrapper>
-      <ActionsList ourAction="TRUCO" />
-    </Wrapper>
-  ))
-  .add("say envido can't win", () => (
-    <Wrapper>
-      <ActionsList sayEnvidoActions={["CANT_WIN"]} />
-    </Wrapper>
-  ))
-  .add("say envido points", () => (
-    <Wrapper>
-      <ActionsList sayEnvidoActions={["POINTS"]} envidoPoints={33} />
+      <ActionsList
+        actions={[
+          {
+            type: "ACCEPT",
+            text: "Quiero",
+            position: "top",
+            onClick: () => {
+              console.log("Quiero");
+            },
+          },
+          {
+            type: "REJECT",
+            text: "No quiero",
+            position: "top",
+            onClick: () => {
+              console.log("No quiero");
+            },
+          },
+          {
+            text: "Envido",
+            disabled: true,
+            onClick: () => {
+              console.log("Envido");
+            },
+          },
+          {
+            text: "Retruco",
+            onClick: () => {
+              console.log("Retruco");
+            },
+          },
+          {
+            text: "Irse al mazo",
+            onClick: () => {
+              console.log("Irse al mazo");
+            },
+          },
+        ]}
+      />
     </Wrapper>
   ));

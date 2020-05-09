@@ -22,7 +22,7 @@ export default function PlayedCards({ cardsPlayedByPlayer, userId }) {
   )(cardsPlayedByPlayer);
 
   return (
-    <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 space-y-8">
+    <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 space-y-8 pb-20">
       {cardsByPlayer.map(({ playerId, cards, isCurrentPlayer }) => (
         <div key={playerId} className="flex items-center space-x-3">
           {cards.map((card, index) => (

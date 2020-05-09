@@ -3,6 +3,7 @@ import { useMutation } from "react-apollo";
 import gql from "graphql-tag";
 
 import Card from "../../../components/Card";
+import ActionDialog from "../../../components/ActionDialog";
 
 const PLAY_CARD = gql`
   mutation playCard($matchId: ID!, $cardId: ID!) {
@@ -24,25 +25,32 @@ export default function YourCards({
   matchId,
   enablePlayCards,
   notPlayedCards,
+  action,
 }) {
   const [playCard] = useMutation(PLAY_CARD);
 
   return (
-    <div
-      className={`flex absolute left-1/2 transform -translate-x-1/2 space-x-1 bottom-0 ${
-        enablePlayCards ? "opacity-100" : " opacity-50"
-      }`}
-    >
-      {notPlayedCards.map(({ id, card }) => (
-        <Card
-          width={90}
-          key={card}
-          card={card}
-          onClick={() =>
-            enablePlayCards && playCard({ variables: { cardId: id, matchId } })
-          }
-        />
-      ))}
+    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 mb-8">
+      {action && action.type && (
+        <ActionDialog action={action} position="bottom" />
+      )}
+      <div
+        className={`flex space-x-1 ${
+          enablePlayCards ? "opacity-100" : " opacity-50"
+        }`}
+      >
+        {notPlayedCards.map(({ id, card }) => (
+          <Card
+            width={90}
+            key={card}
+            card={card}
+            onClick={() =>
+              enablePlayCards &&
+              playCard({ variables: { cardId: id, matchId } })
+            }
+          />
+        ))}
+      </div>
     </div>
   );
 }

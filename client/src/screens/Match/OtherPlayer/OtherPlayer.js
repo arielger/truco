@@ -1,9 +1,9 @@
 import React from "react";
 import * as R from "ramda";
 
-import actionsToText from "../../../utils/actionsToText.json";
+import ActionDialog from "../../../components/ActionDialog";
+
 import { getRandomAvatar } from "../../../utils/player";
-import styles from "./OtherPlayer.module.scss";
 
 export default function OtherPlayer({
   player,
@@ -46,16 +46,7 @@ export default function OtherPlayer({
         </div>
       </div>
       <span className="text-xs font-medium tracking-wider">{player.name}</span>
-      {action && action.type && (
-        <div
-          style={{ top: "calc(100% + 18px)" }}
-          className={`${styles.actionDialog} absolute bg-white rounded-md px-4 py-2 uppercase font-bold text-gray-800 whitespace-no-wrap`}
-        >
-          {["POINTS", "N_ARE_MORE"]
-            ? actionsToText[action.type].replace("{{points}}", action.points)
-            : actionsToText[action.type]}
-        </div>
-      )}
+      {action && action.type && <ActionDialog action={action} position="top" />}
     </div>
   );
 }

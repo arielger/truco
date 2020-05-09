@@ -33,6 +33,17 @@ const GameBoard = ({ match, user, matchId, history }) => {
 
   const otherPlayers = R.reject(R.propEq("id", user.id), match.players);
 
+  const waitingResponse =
+    (R.pathEq(["envido", "team"], "we", match) &&
+      R.pathEq(["envido", "status"], "PENDING", match)) ||
+    (R.pathEq(["truco", "team"], "we", match) &&
+      R.pathEq(["truco", "status"], "PENDING", match));
+  const enablePlayCards =
+    !match.roundWinnerTeam &&
+    match.nextPlayer === user.id &&
+    !match.nextPlayerEnvido &&
+    !waitingResponse;
+
   return (
     <div className="w-screen h-screen relative overflow-hidden">
       <Scores
@@ -44,6 +55,7 @@ const GameBoard = ({ match, user, matchId, history }) => {
       <Actions
         match={match}
         matchId={matchId}
+        waitingResponse={waitingResponse}
         isCurrentPlayer={isCurrentPlayer}
         nextEnvidoPlayer={match.nextPlayerEnvido}
         isCurrentEnvidoPlayer={isCurrentEnvidoPlayer}
@@ -80,13 +92,13 @@ const GameBoard = ({ match, user, matchId, history }) => {
       <YourCards
         matchId={matchId}
         player={user}
-        enablePlayCards={
-          !match.roundWinnerTeam &&
-          match.nextPlayer === user.id &&
-          !match.nextPlayerEnvido
-        }
+        enablePlayCards={enablePlayCards}
         playedCards={playedCards}
         notPlayedCards={notPlayedCards}
+        action={
+          R.pathEq(["lastAction", "playerId"], user.id, match) &&
+          match.lastAction
+        }
       />
       {match.matchWinnerTeam && (
         <WinnerModal history={history} winnerTeam={match.matchWinnerTeam} />
