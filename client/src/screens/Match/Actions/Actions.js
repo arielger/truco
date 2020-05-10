@@ -71,11 +71,14 @@ export default function Actions({
     (nextEnvidoPlayer && !isCurrentEnvidoPlayer) ||
     !isCurrentPlayer;
 
+  const disableEnvidoActions =
+    actionsDisabled || match.envido || currentHand !== 1;
+
   React.useEffect(() => {
-    if (actionsDisabled || match.envido) {
+    if (disableEnvidoActions) {
       setShowEnvidoActions(false);
     }
-  }, [actionsDisabled, match.envido]);
+  }, [disableEnvidoActions]);
 
   const leaveRoundAction = {
     type: "LEAVE_ROUND",
@@ -148,7 +151,7 @@ export default function Actions({
           ],
         ],
         [
-          () => showEnvidoActions,
+          () => showEnvidoActions && !disableEnvidoActions,
           () => [
             ...envidoActions.map((envidoAction) => ({
               type: envidoAction,
@@ -169,7 +172,7 @@ export default function Actions({
             {
               text: "Envido",
               onClick: () => setShowEnvidoActions(true),
-              disabled: actionsDisabled || match.envido,
+              disabled: disableEnvidoActions,
             },
             ...trucoActions.map((trucoAction) => ({
               text: actionsToText[trucoAction],
@@ -182,7 +185,6 @@ export default function Actions({
         ],
       ])(),
     [
-      match.envido,
       leaveRoundAction,
       cardPlayed,
       currentPlayerEnvidoPoints,
@@ -199,6 +201,7 @@ export default function Actions({
       showEnvidoActions,
       trucoActions,
       actionsDisabled,
+      disableEnvidoActions,
     ]
   );
 
