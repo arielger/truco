@@ -1,10 +1,14 @@
 import React from "react";
 import * as R from "ramda";
 import { useQuery, gql } from "@apollo/client";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faFrownOpen } from "@fortawesome/free-solid-svg-icons";
+import { Link } from "react-router-dom";
 
 import WaitingState from "./WaitingState";
 import GameBoard from "./GameBoard";
 
+import Button from "../../components/Button";
 import Spinner from "../../components/Spinner";
 
 const matchFields = `
@@ -126,7 +130,21 @@ function Match({ history, user, match: urlMatch }) {
   if (loading) {
     return <Spinner fullHeight text="Cargando partida" />;
   }
-  if (error) return <p>Error</p>;
+  if (error)
+    return (
+      <div className="h-full flex flex-col justify-center items-center p-4">
+        <div className="flex flex-col justify-center items-center text-center flex-1">
+          <FontAwesomeIcon icon={faFrownOpen} className="text-4xl mb-4" />
+          <span className="mb-2">Hubo un error al cargar la partida</span>
+          <span className="text-sm text-gray-500">
+            Estás seguro que ingresaste el código correcto?
+          </span>
+        </div>
+        <Link to="/partidas" className="w-full">
+          <Button styleType="primary">Volver al listado de partidas</Button>
+        </Link>
+      </div>
+    );
 
   const match = R.propOr({}, "match", data);
 
