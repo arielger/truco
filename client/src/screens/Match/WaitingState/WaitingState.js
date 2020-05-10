@@ -10,8 +10,7 @@ import {
   faHourglassHalf,
   faMeh,
 } from "@fortawesome/free-solid-svg-icons";
-import gql from "graphql-tag";
-import { useMutation } from "react-apollo";
+import { useMutation, gql } from "@apollo/client";
 
 import { getRandomAvatar } from "../../../utils/player";
 

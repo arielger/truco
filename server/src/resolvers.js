@@ -19,7 +19,7 @@ module.exports = {
     match: authenticateRoute((parent, { id }, { userId, dataSources }) =>
       dataSources.matchAPI.getMatchById({ matchId: id, userId })
     ),
-    me: authenticateRoute((parent, args, { userId, dataSources }) =>
+    user: authenticateRoute((parent, args, { userId, dataSources }) =>
       dataSources.userAPI.getUserInfo({ userId })
     ),
   },

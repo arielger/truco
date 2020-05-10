@@ -1,13 +1,17 @@
 import React from "react";
 import * as R from "ramda";
 import Modal from "react-modal";
-import gql from "graphql-tag";
 import { Formik, Form, Field } from "formik";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck } from "@fortawesome/free-solid-svg-icons";
+import {
+  faCheck,
+  faExclamationCircle,
+} from "@fortawesome/free-solid-svg-icons";
+import { useMutation, gql } from "@apollo/client";
 
 import styles from "./NewMatch.module.scss";
 
+import Alert from "../../components/Alert";
 import Button from "../../components/Button";
 
 const CREATE_MATCH = gql`
@@ -79,26 +83,15 @@ const Radio = ({ id, text, className = "", disabled, ...props }) => (
   </>
 );
 
-export default function NewMatch({ visible, onClose, client, history }) {
-  const createNewMatch = (matchData) => {
-    client
-      .mutate({
-        variables: matchData,
-        mutation: CREATE_MATCH,
-      })
-      .then(
-        ({
-          data: {
-            createMatch: { id },
-          },
-        }) => {
-          history.push(`/match/${id}`);
-        }
-      )
-      .catch((error) => {
-        console.log(error);
-      });
-  };
+export default function NewMatch({ visible, onClose, history }) {
+  const [createMatch, { loading, error }] = useMutation(CREATE_MATCH, {
+    onCompleted: (data) => {
+      // @TODO => Load match data to cache so we don't need to execute the match query when
+      // when moving to the match page
+      const newMatchId = R.path(["createMatch", "id"], data);
+      history.push(`/partidas/${newMatchId}`);
+    },
+  });
 
   return (
     <Modal
@@ -113,13 +106,13 @@ export default function NewMatch({ visible, onClose, client, history }) {
       <Formik
         initialValues={{ playersCount: "2", points: "30" }}
         onSubmit={(values, { setSubmitting }) => {
-          createNewMatch(
-            // Transform strings to int
-            R.evolve({
+          // Transform strings to int
+          createMatch({
+            variables: R.evolve({
               playersCount: parseInt,
               points: parseInt,
-            })(values)
-          );
+            })(values),
+          });
         }}
       >
         {({ values, isSubmitting }) => {
@@ -169,9 +162,18 @@ export default function NewMatch({ visible, onClose, client, history }) {
                 type="submit"
                 disabled={isSubmitting}
                 className="mt-8"
+                isLoading={loading}
               >
                 Crear
               </Button>
+              {error && (
+                <Alert
+                  type="error"
+                  icon={faExclamationCircle}
+                  message="Hubo un error al intentar ingresar"
+                  className="mt-4"
+                />
+              )}
             </Form>
           );
         }}

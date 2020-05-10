@@ -1,21 +1,21 @@
-import React, { Fragment } from "react";
-import * as R from "ramda";
-import { ApolloProvider, Query } from "react-apollo";
-import { ApolloClient } from "apollo-client";
-import { InMemoryCache } from "apollo-cache-inmemory";
-import { ApolloLink, split } from "apollo-link";
-import { onError } from "apollo-link-error";
-import { getMainDefinition } from "apollo-utilities";
-import { HttpLink } from "apollo-link-http";
-import { setContext } from "apollo-link-context";
-import { WebSocketLink } from "apollo-link-ws";
+import React from "react";
+import {
+  ApolloProvider,
+  ApolloClient,
+  ApolloLink,
+  split,
+  HttpLink,
+  gql,
+} from "@apollo/client";
+import { InMemoryCache } from "@apollo/client/cache";
+import { onError } from "@apollo/link-error";
+import { WebSocketLink } from "@apollo/link-ws";
+import { setContext } from "@apollo/link-context";
+import { getMainDefinition } from "@apollo/client/utilities";
 import { SubscriptionClient } from "subscriptions-transport-ws";
-import { BrowserRouter, Switch, Route, Redirect } from "react-router-dom";
-import gql from "graphql-tag";
 import ReactModal from "react-modal";
 
-import { Login, Matches, Match } from "./screens";
-import styles from "./App.module.scss";
+import Routes from "./Routes";
 
 ReactModal.setAppElement("#root");
 
@@ -24,13 +24,13 @@ const authLink = setContext((_, { headers = {} }) => {
   return {
     headers: {
       ...headers,
-      authorization: token || ""
-    }
+      authorization: token || "",
+    },
   };
 });
 
 const networkInterface = new HttpLink({
-  uri: process.env.REACT_APP_API_URL
+  uri: process.env.REACT_APP_API_URL,
 });
 
 // Create WebSocket client
@@ -39,8 +39,8 @@ const wsClient = new SubscriptionClient(
   {
     reconnect: true,
     connectionParams: () => ({
-      authorization: localStorage.getItem("token") || ""
-    })
+      authorization: localStorage.getItem("token") || "",
+    }),
   }
 );
 
@@ -76,83 +76,32 @@ const link = ApolloLink.from([
   errorLink,
   requestLink({
     queryOrMutationLink: authLink.concat(networkInterface),
-    subscriptionLink: webSocketLink
-  })
+    subscriptionLink: webSocketLink,
+  }),
 ]);
 
 const client = new ApolloClient({
   link,
-  cache: new InMemoryCache()
+  cache: new InMemoryCache(),
 });
 
-client.writeData({
-  data: {
-    isLoggedIn: !!localStorage.getItem("token"),
-    token: localStorage.getItem("token")
-  }
-});
-
-const IS_LOGGED_IN = gql`
-  query isLoggedIn {
-    isLoggedIn @client
-  }
-`;
-
-const FETCH_PROFILE = gql`
-  query fetchProfile {
-    me {
-      id
-      avatar
-      name
+client.writeQuery({
+  query: gql`
+    query {
+      token
+      user
     }
-  }
-`;
+  `,
+  data: {
+    token: localStorage.getItem("token"),
+    user: null,
+  },
+});
 
 const App = () => {
   return (
     <ApolloProvider client={client}>
-      <Query query={IS_LOGGED_IN}>
-        {({ data: { isLoggedIn } }) => (
-          <Fragment>
-            <BrowserRouter>
-              {isLoggedIn ? (
-                <div className={styles["layout"]}>
-                  <Query query={FETCH_PROFILE}>
-                    {({ data, loading, error }) => {
-                      if (loading) return "Loading";
-                      const user = R.prop("me", data);
-                      return (
-                        <>
-
-                          {/*
-                            @TODO: Review if we should continue using this component
-                            <Header client={client} user={user} />
-                          */}
-                          <Switch>
-                            <Route path="/partidas" component={Matches} />
-                            <Route
-                              path="/match/:matchId"
-                              render={({ ...props }) => (
-                                <Match user={user} {...props} />
-                              )}
-                            />
-                            <Redirect to="/partidas" />
-                          </Switch>
-                        </>
-                      );
-                    }}
-                  </Query>
-                </div>
-              ) : (
-                  <Switch>
-                    <Route path="/login" component={Login} />
-                    <Redirect to="/login" />
-                  </Switch>
-                )}
-            </BrowserRouter>
-          </Fragment>
-        )}
-      </Query>
+      <Routes />
     </ApolloProvider>
   );
 };

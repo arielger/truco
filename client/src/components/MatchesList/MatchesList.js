@@ -1,12 +1,13 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import Spinner from "react-svg-spinner";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar } from "@fortawesome/free-solid-svg-icons";
 
 import styles from "./MatchesList.module.scss";
 
 import { getRandomAvatar } from "../../utils/player";
+
+import Spinner from "../Spinner";
 
 export default function MatchesList({
   subscribeToUpdates,
@@ -21,13 +22,7 @@ export default function MatchesList({
     };
   }, [subscribeToUpdates]);
 
-  if (loading)
-    return (
-      <div className={styles.loading}>
-        <Spinner color="rgba(255,255,255, 0.5)" size="32px" />
-        <span>Cargando partidas</span>
-      </div>
-    );
+  if (loading) return <Spinner text="Cargando partidas" />;
   if (error) {
     return <p className="text-center my-8">Error cargando partidas</p>;
   }
@@ -39,7 +34,7 @@ export default function MatchesList({
     <div className="flex flex-col">
       {matches.map((match) => (
         <Link
-          to={`/match/${match.id}`}
+          to={`/partidas/${match.id}`}
           key={match.id}
           className="inline-block text-black mb-3"
         >

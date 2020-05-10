@@ -21,8 +21,8 @@ class UserAPI extends DataSource {
     return {
       token,
       user: {
+        id: newUser.id,
         name: newUser.name,
-        avatar: newUser.avatar,
       },
     };
   }
@@ -37,6 +37,7 @@ class UserAPI extends DataSource {
         if (user) {
           return {
             user: {
+              id: user.id,
               name: user.name,
               email: user.email,
               avatar: user.avatar,
@@ -70,6 +71,7 @@ class UserAPI extends DataSource {
         if (user) {
           return {
             user: {
+              id: user.id,
               name: user.name,
               email: user.email,
               avatar: user.avatar,

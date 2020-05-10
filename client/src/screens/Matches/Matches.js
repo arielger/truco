@@ -1,7 +1,6 @@
 import React from "react";
 import * as R from "ramda";
-import { withApollo, Query } from "react-apollo";
-import gql from "graphql-tag";
+import { useQuery, gql } from "@apollo/client";
 
 import Button from "../../components/Button";
 
@@ -82,10 +81,17 @@ const handleMatchUpdates = (
   }
 };
 
-const Matches = ({ history, client }) => {
+const Matches = ({ history }) => {
   const [isNewMatchModalVisible, setNewMatchModalVisible] = React.useState(
     false
   );
+
+  const {
+    loading,
+    error,
+    data: matchesData,
+    subscribeToMore,
+  } = useQuery(MATCHES_QUERY, { fetchPolicy: "cache-and-network" });
 
   return (
     <div className="flex flex-col p-6 items-center items-stretch w-full md:max-w-md mx-auto">
@@ -101,27 +107,20 @@ const Matches = ({ history, client }) => {
         visible={isNewMatchModalVisible}
         onClose={() => setNewMatchModalVisible(false)}
         history={history}
-        client={client}
       />
-      <Query query={MATCHES_QUERY} fetchPolicy="cache-and-network">
-        {({ subscribeToMore, loading, error, data }) => {
-          return (
-            <MatchesList
-              loading={loading}
-              error={error}
-              matches={R.propOr([], "matches", data)}
-              subscribeToUpdates={() =>
-                subscribeToMore({
-                  document: MATCHES_SUBSCRIPTION,
-                  updateQuery: handleMatchUpdates,
-                })
-              }
-            />
-          );
-        }}
-      </Query>
+      <MatchesList
+        loading={loading}
+        error={error}
+        matches={R.propOr([], "matches", matchesData)}
+        subscribeToUpdates={() =>
+          subscribeToMore({
+            document: MATCHES_SUBSCRIPTION,
+            updateQuery: handleMatchUpdates,
+          })
+        }
+      />
     </div>
   );
 };
 
-export default withApollo(Matches);
+export default Matches;

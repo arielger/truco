@@ -1,9 +1,7 @@
 import React from "react";
-import * as R from "ramda";
-import { ApolloConsumer, useMutation } from "react-apollo";
+import { useMutation, gql } from "@apollo/client";
 import FacebookLogin from "react-facebook-login/dist/facebook-login-render-props";
 import GoogleLogin from "react-google-login";
-import gql from "graphql-tag";
 import padStart from "pad-start";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFacebookSquare, faGoogle } from "@fortawesome/free-brands-svg-icons";
@@ -34,6 +32,7 @@ const LOG_IN_AS_GUEST = gql`
     logInAsGuest(name: $name) {
       token
       user {
+        id
         name
       }
     }
@@ -45,6 +44,7 @@ const LOG_IN_WITH_FACEBOOK = gql`
     logInWithFacebook(accessToken: $accessToken) {
       token
       user {
+        id
         name
         avatar
       }
@@ -57,6 +57,7 @@ const LOG_IN_WITH_GOOGLE = gql`
     logInWithGoogle(accessToken: $accessToken) {
       token
       user {
+        id
         name
         avatar
       }
@@ -69,30 +70,45 @@ export default function Login() {
     `jugador${padStart(getRandomInt(1, 10000), 4, "0")}`
   );
 
-  const handleLogIn = React.useCallback((key, cache, data) => {
-    const token = R.path([key, "token"], data);
-    localStorage.setItem("token", token);
-    cache.writeData({ data: { isLoggedIn: true, token } });
-  }, []);
+  const handleLogIn = React.useCallback(
+    (key) => (cache, { data }) => {
+      const response = data[key];
+      localStorage.setItem("token", response.token);
+      cache.writeQuery({
+        query: gql`
+          query {
+            user {
+              id
+              name
+              avatar
+            }
+            token
+          }
+        `,
+        data: { ...response },
+      });
+    },
+    []
+  );
 
   const [
     logInAsGuest,
     { loading: logInAsGuestLoading, error: logInAsGuestError },
   ] = useMutation(LOG_IN_AS_GUEST, {
     variables: { name: playerName },
-    update: (cache, { data }) => handleLogIn("logInAsGuest", cache, data),
+    update: handleLogIn("logInAsGuest"),
   });
   const [
     logInWithFacebook,
     { loading: logInWithFacebookLoading, error: logInWithFacebookError },
   ] = useMutation(LOG_IN_WITH_FACEBOOK, {
-    update: (cache, { data }) => handleLogIn("logInWithFacebook", cache, data),
+    update: handleLogIn("logInWithFacebook"),
   });
   const [
     logInWithGoogle,
     { loading: logInWithGoogleLoading, error: logInWithGoogleError },
   ] = useMutation(LOG_IN_WITH_GOOGLE, {
-    update: (cache, { data }) => handleLogIn("logInWithGoogle", cache, data),
+    update: handleLogIn("logInWithGoogle"),
   });
 
   const showError =
@@ -123,89 +139,80 @@ export default function Login() {
         </ul>
       </div>
       <div className="flex flex-col items-stretch justify-center bg-white mt-auto md:mt-12 p-8 w-full rounded-t md:rounded md:max-w-md">
-        <ApolloConsumer>
-          {(client) => (
-            <>
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  logInAsGuest(client);
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            logInAsGuest();
+          }}
+        >
+          <input
+            value={playerName}
+            onChange={(e) => setPlayerName(e.target.value)}
+            className="px-4 border border-gray-400 rounded-lg w-full h-12 shadow mb-3 text-gray-800 focus:outline-none focus:border-blue-400"
+            placeholder="Nombre"
+          />
+          <Button
+            disabled={!playerName.length}
+            isLoading={logInAsGuestLoading}
+            styleType="primary"
+            // className="mb-4"
+            type="submit"
+          >
+            Ingresar
+          </Button>
+        </form>
+        {SHOW_PROVIDERS_LOGIN && (
+          <>
+            <span className="h-px w-full bg-gray-300 mb-4" />
+            <div className="flex items-center space-x-3">
+              <FacebookLogin
+                appId={process.env.REACT_APP_FACEBOOK_APP_ID}
+                fields="name,email,picture"
+                callback={({ accessToken }) => {
+                  logInWithFacebook({ variables: { accessToken } });
                 }}
-              >
-                <input
-                  value={playerName}
-                  onChange={(e) => setPlayerName(e.target.value)}
-                  className="px-4 border border-gray-400 rounded-lg w-full h-12 shadow mb-3 text-gray-800 focus:outline-none focus:border-blue-400"
-                  placeholder="Nombre"
-                />
-                <Button
-                  disabled={!playerName.length}
-                  isLoading={logInAsGuestLoading}
-                  styleType="primary"
-                  // className="mb-4"
-                  type="submit"
-                >
-                  Ingresar
-                </Button>
-              </form>
-              {SHOW_PROVIDERS_LOGIN && (
-                <>
-                  <span className="h-px w-full bg-gray-300 mb-4" />
-                  <div className="flex items-center space-x-3">
-                    <FacebookLogin
-                      appId={process.env.REACT_APP_FACEBOOK_APP_ID}
-                      fields="name,email,picture"
-                      callback={({ accessToken }) => {
-                        logInWithFacebook({ variables: { accessToken } });
-                      }}
-                      render={({ onClick, isDisabled, isProcessing }) => (
-                        <button
-                          className={`${styles.facebookBtn} flex-1 h-12 rounded-lg text-white focus:outline-none transition ease-in duration-100`}
-                          onClick={onClick}
-                          disabled={isDisabled}
-                          isLoading={logInWithFacebookLoading || isProcessing}
-                        >
-                          <FontAwesomeIcon
-                            icon={faFacebookSquare}
-                            className="mr-3"
-                          />
-                          Facebook
-                        </button>
-                      )}
-                    />
-                    <GoogleLogin
-                      clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}
-                      onSuccess={({ accessToken }) =>
-                        logInWithGoogle({ variables: { accessToken } })
-                      }
-                      onFailure={(error) => {
-                        console.log("Error logging in with google", error);
-                      }}
-                      render={({ onClick, disabled }) => (
-                        <button
-                          className={`${styles.googleBtn} flex-1 h-12 rounded-lg text-white focus:outline-none transition ease-in duration-100`}
-                          disabled={disabled || logInWithGoogleLoading}
-                          onClick={onClick}
-                        >
-                          <FontAwesomeIcon icon={faGoogle} className="mr-3" />
-                          Google
-                        </button>
-                      )}
-                    />
-                  </div>
-                </>
-              )}
-              {showError && (
-                <Alert
-                  type="error"
-                  icon={faExclamationCircle}
-                  message="Hubo un error al intentar ingresar"
-                  className="mt-4"
-                />
-              )}
-            </>
-          )}
-        </ApolloConsumer>
+                render={({ onClick, isDisabled, isProcessing }) => (
+                  <button
+                    className={`${styles.facebookBtn} flex-1 h-12 rounded-lg text-white focus:outline-none transition ease-in duration-100`}
+                    onClick={onClick}
+                    disabled={isDisabled}
+                    isLoading={logInWithFacebookLoading || isProcessing}
+                  >
+                    <FontAwesomeIcon icon={faFacebookSquare} className="mr-3" />
+                    Facebook
+                  </button>
+                )}
+              />
+              <GoogleLogin
+                clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}
+                onSuccess={({ accessToken }) =>
+                  logInWithGoogle({ variables: { accessToken } })
+                }
+                onFailure={(error) => {
+                  console.log("Error logging in with google", error);
+                }}
+                render={({ onClick, disabled }) => (
+                  <button
+                    className={`${styles.googleBtn} flex-1 h-12 rounded-lg text-white focus:outline-none transition ease-in duration-100`}
+                    disabled={disabled || logInWithGoogleLoading}
+                    onClick={onClick}
+                  >
+                    <FontAwesomeIcon icon={faGoogle} className="mr-3" />
+                    Google
+                  </button>
+                )}
+              />
+            </div>
+          </>
+        )}
+        {showError && (
+          <Alert
+            type="error"
+            icon={faExclamationCircle}
+            message="Hubo un error al intentar ingresar"
+            className="mt-4"
+          />
+        )}
       </div>
     </div>
   );

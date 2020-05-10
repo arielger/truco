@@ -1,16 +1,17 @@
-type AuthUser {
+type User {
+  id: ID!
   name: String!
   email: String
   avatar: String
 }
 
 type AuthResponse {
-  token: String
-  user: AuthUser
+  token: String!
+  user: User!
 }
 
 extend type Query {
-  me: Player!
+  user: User!
 }
 
 extend type Mutation {

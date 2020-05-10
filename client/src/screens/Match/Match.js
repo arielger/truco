@@ -1,11 +1,11 @@
 import React from "react";
 import * as R from "ramda";
-import { withApollo, useQuery } from "react-apollo";
-import Spinner from "react-svg-spinner";
-import gql from "graphql-tag";
+import { useQuery, gql } from "@apollo/client";
 
 import WaitingState from "./WaitingState";
 import GameBoard from "./GameBoard";
+
+import Spinner from "../../components/Spinner";
 
 const matchFields = `
   status
@@ -124,12 +124,7 @@ function Match({ history, user, match: urlMatch }) {
 
   // @TODO: Improve loading and error screens
   if (loading) {
-    return (
-      <div className="flex flex-col space-y-4 items-center justify-center h-screen">
-        <Spinner color="rgba(255,255,255, 0.5)" size="32px" />
-        <span>Cargando partida</span>
-      </div>
-    );
+    return <Spinner fullHeight text="Cargando partida" />;
   }
   if (error) return <p>Error</p>;
 
@@ -169,4 +164,4 @@ function Match({ history, user, match: urlMatch }) {
   );
 }
 
-export default withApollo(Match);
+export default Match;

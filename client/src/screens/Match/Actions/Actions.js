@@ -1,7 +1,6 @@
 import React from "react";
 import * as R from "ramda";
-import { useMutation } from "react-apollo";
-import gql from "graphql-tag";
+import { useMutation, gql } from "@apollo/client";
 
 import ActionsList from "./ActionsList";
 import {
