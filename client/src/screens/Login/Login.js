@@ -119,7 +119,12 @@ export default function Login() {
       className={`${styles.login} flex flex-col items-center md:justify-center`}
     >
       <div className="flex flex-col items-center flex-grow md:flex-grow-0 justify-center">
-        <img src={logo} alt="Truco.pro logo" className="mb-10" />
+        <img
+          src={logo}
+          alt="Truco.pro logo"
+          className="mb-10"
+          style={{ width: "209px", height: "91px" }}
+        />
         <ul className="flex flex-col space-y-4">
           {[
             { icon: faArrowRight, text: "Juga sin registrarte" },
