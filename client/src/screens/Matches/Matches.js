@@ -2,6 +2,7 @@ import React from "react";
 import * as R from "ramda";
 import { useQuery, gql } from "@apollo/client";
 
+import { trackModalView } from "../../components/UserTracking";
 import Button from "../../components/Button";
 
 import NewMatch from "../NewMatch";
@@ -99,7 +100,10 @@ const Matches = ({ history }) => {
       <Button
         styleType="primary"
         className="mb-8"
-        onClick={() => setNewMatchModalVisible(true)}
+        onClick={() => {
+          setNewMatchModalVisible(true);
+          trackModalView("/partidas/crear-nueva");
+        }}
       >
         Crear nueva
       </Button>

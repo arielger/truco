@@ -4,6 +4,7 @@ import { BrowserRouter, Switch, Route, Redirect } from "react-router-dom";
 
 import { Login, Matches, Match } from "./screens";
 import Spinner from "./components/Spinner";
+import UserTracking from "./components/UserTracking";
 
 import styles from "./App.module.scss";
 
@@ -49,10 +50,11 @@ export default function Routes() {
     }
   }, [isLoggedIn, fetchProfile, user]);
 
-  if (loadingFetchProfile) return <Spinner fullHeight />;
+  if (loadingFetchProfile || !user) return <Spinner fullHeight />;
 
   return (
     <BrowserRouter>
+      <UserTracking />
       {isLoggedIn ? (
         <div className={styles["layout"]}>
           <Switch>

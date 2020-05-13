@@ -25,6 +25,7 @@
     "react": "^16.8.3",
     "react-dom": "^16.8.3",
     "react-facebook-login": "^4.1.1",
+    "react-ga": "^2.7.0",
     "react-google-login": "^5.0.4",
     "react-modal": "^3.8.1",
     "react-router-dom": "^5.1.2",

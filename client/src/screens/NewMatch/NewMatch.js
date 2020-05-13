@@ -11,6 +11,7 @@ import { useMutation, gql } from "@apollo/client";
 
 import styles from "./NewMatch.module.scss";
 
+import { trackEvent } from "../../components/UserTracking";
 import Alert from "../../components/Alert";
 import Button from "../../components/Button";
 
@@ -107,12 +108,17 @@ export default function NewMatch({ visible, onClose, history }) {
         initialValues={{ playersCount: "2", points: "30" }}
         onSubmit={(values, { setSubmitting }) => {
           // Transform strings to int
-          createMatch({
-            variables: R.evolve({
-              playersCount: parseInt,
-              points: parseInt,
-            })(values),
+          const matchConfig = R.evolve({
+            playersCount: parseInt,
+            points: parseInt,
+          })(values);
+
+          trackEvent({
+            category: "Matches",
+            action: "Create a new match",
           });
+
+          createMatch({ variables: matchConfig });
         }}
       >
         {({ values, isSubmitting }) => {
