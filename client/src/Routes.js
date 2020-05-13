@@ -50,7 +50,11 @@ export default function Routes() {
     }
   }, [isLoggedIn, fetchProfile, user]);
 
-  if (loadingFetchProfile || !user) return <Spinner fullHeight />;
+  const isUserStatusLoaded = !isLoggedIn || (isLoggedIn && user);
+
+  if (loadingFetchProfile || !isUserStatusLoaded) {
+    return <Spinner fullHeight />;
+  }
 
   return (
     <BrowserRouter>
