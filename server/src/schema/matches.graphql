@@ -51,7 +51,7 @@ type Match {
   status: MatchStatus!
   playersCount: Int!
   points: Int!
-  creator: Player!
+  creator: Creator!
   players: [Player]!
 }
 
@@ -89,7 +89,7 @@ type PlayerMatch {
   status: MatchStatus!
   playersCount: Int!
   points: Int!
-  creator: Player!
+  creator: Creator!
   players: [Player]!
   myCards: [Card!]!
   nextPlayer: ID
@@ -118,7 +118,7 @@ type MatchListUpdate {
   status: MatchStatus!
   playersCount: Int!
   points: Int!
-  creator: Player!
+  creator: Creator!
   players: [Player]!
 }
 
@@ -139,7 +139,7 @@ type MatchUpdate {
   status: MatchStatus!
   playersCount: Int!
   points: Int!
-  creator: Player!
+  creator: Creator!
   players: [Player]!
   myCards: [Card!]
   nextPlayer: ID
@@ -154,6 +154,12 @@ type MatchUpdate {
   nextPlayerEnvido: ID
   envidoPoints: [playerEnvidoPoints]
   lastAction: Action
+}
+
+type Creator {
+  id: ID!
+  name: String!
+  avatar: String
 }
 
 type Player {
