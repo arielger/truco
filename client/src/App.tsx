@@ -46,11 +46,20 @@ const wsClient = new SubscriptionClient(
 
 const webSocketLink = new WebSocketLink(wsClient);
 
-const requestLink = ({ queryOrMutationLink, subscriptionLink }) =>
+const requestLink = ({
+  queryOrMutationLink,
+  subscriptionLink,
+}: {
+  queryOrMutationLink: ApolloLink;
+  subscriptionLink: ApolloLink;
+}) =>
   split(
     ({ query }) => {
-      const { kind, operation } = getMainDefinition(query);
-      return kind === "OperationDefinition" && operation === "subscription";
+      const definition = getMainDefinition(query);
+      return (
+        definition.kind === "OperationDefinition" &&
+        definition.operation === "subscription"
+      );
     },
     subscriptionLink,
     queryOrMutationLink
@@ -59,7 +68,7 @@ const requestLink = ({ queryOrMutationLink, subscriptionLink }) =>
 const errorLink = onError(({ graphQLErrors, networkError }) => {
   if (graphQLErrors) {
     graphQLErrors.forEach(({ message, locations, path, extensions }) => {
-      if (extensions.code === "UNAUTHENTICATED") {
+      if (extensions && extensions.code === "UNAUTHENTICATED") {
         localStorage.removeItem("token");
         location.reload(); //eslint-disable-line no-restricted-globals
       }
