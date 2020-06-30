@@ -7,8 +7,9 @@ import "../src/styles/tailwind.css";
 addDecorator(StoryRouter());
 
 // Only add typeDefs so we don't get an error
-addDecorator(apolloStorybookDecorator({
-  typeDefs: `
+addDecorator(
+  apolloStorybookDecorator({
+    typeDefs: `
     type Query {
       test: String
     }
@@ -17,14 +18,14 @@ addDecorator(apolloStorybookDecorator({
       query: Query
     }
   `,
-  mocks: {}
-}));
-
+    mocks: {},
+  })
+);
 
 // automatically import all files ending in *.stories.js
-const req = require.context("../src", true, /\.stories\.js$/);
+const req = require.context("../src", true, /\.stories\.tsx$/);
 function loadStories() {
-  req.keys().forEach(filename => req(filename));
+  req.keys().forEach((filename) => req(filename));
 }
 
 configure(loadStories, module);

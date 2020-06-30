@@ -1,0 +1,20 @@
+overwrite: true
+schema: "http://localhost:4000/graphql"
+documents: "../client/src/**/*.tsx" # Add documents to generate react hooks
+generates:
+  ../client/src/types/graphql.tsx:
+    schema: ../client/src/client-schema.graphql
+    plugins:
+      - "typescript"
+      - "typescript-operations"
+      - "typescript-react-apollo"
+      - add: "// prettier-ignore"
+      - add: "/* eslint-disable */"
+    config:
+      withComponent: false
+      withHOC: false
+      withHooks: true
+      reactApolloVersion: 3
+      # This is to solve a problem when using generated useQuery with subscription
+      # Dont know how to solve this
+      skipTypename: true

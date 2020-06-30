@@ -4,6 +4,15 @@ Multiplayer truco game made with GraphQL and React.
 
 ## Development
 
+### Tech stack
+
+- GraphQL (Apollo Server + Apollo Client)
+- React
+- React router
+- Typescript
+- Tailwind CSS
+- GraphQL Codegen (generate Typescript types from GraphQL schema)
+
 ### Client
 
 [![Storybook](https://cdn.jsdelivr.net/gh/storybookjs/brand@master/badge/badge-storybook.svg)](link to site)
