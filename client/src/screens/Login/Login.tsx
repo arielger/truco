@@ -1,8 +1,8 @@
 import React from "react";
 import { useMutation, gql } from "@apollo/client";
-import FacebookLogin from "react-facebook-login/dist/facebook-login-render-props";
-import GoogleLogin from "react-google-login";
-import { faFacebookSquare, faGoogle } from "@fortawesome/free-brands-svg-icons";
+// import FacebookLogin from "react-facebook-login/dist/facebook-login-render-props";
+// import GoogleLogin from "react-google-login";
+// import { faFacebookSquare, faGoogle } from "@fortawesome/free-brands-svg-icons";
 import padStart from "pad-start";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -18,7 +18,7 @@ import Alert from "../../components/Alert";
 import logo from "./truco-logo.svg";
 import styles from "./Login.module.scss";
 
-const ENABLE_SOCIAL_MEDIA = false;
+// const ENABLE_SOCIAL_MEDIA = false;
 
 function getRandomInt(min: number, max: number) {
   min = Math.ceil(min);
@@ -47,31 +47,31 @@ const LOG_IN_AS_GUEST = gql`
   }
 `;
 
-const LOG_IN_WITH_FACEBOOK = gql`
-  mutation LogInWithFacebook($accessToken: String!) {
-    logInWithFacebook(accessToken: $accessToken) {
-      token
-      user {
-        id
-        name
-        avatar
-      }
-    }
-  }
-`;
+// const LOG_IN_WITH_FACEBOOK = gql`
+//   mutation LogInWithFacebook($accessToken: String!) {
+//     logInWithFacebook(accessToken: $accessToken) {
+//       token
+//       user {
+//         id
+//         name
+//         avatar
+//       }
+//     }
+//   }
+// `;
 
-const LOG_IN_WITH_GOOGLE = gql`
-  mutation LogInWithGoogle($accessToken: String!) {
-    logInWithGoogle(accessToken: $accessToken) {
-      token
-      user {
-        id
-        name
-        avatar
-      }
-    }
-  }
-`;
+// const LOG_IN_WITH_GOOGLE = gql`
+//   mutation LogInWithGoogle($accessToken: String!) {
+//     logInWithGoogle(accessToken: $accessToken) {
+//       token
+//       user {
+//         id
+//         name
+//         avatar
+//       }
+//     }
+//   }
+// `;
 
 export default function Login() {
   const [playerName, setPlayerName] = React.useState(
@@ -107,21 +107,20 @@ export default function Login() {
     variables: { name: playerName },
     update: handleLogIn("logInAsGuest"),
   });
-  const [
-    logInWithFacebook,
-    { loading: logInWithFacebookLoading, error: logInWithFacebookError },
-  ] = useMutation(LOG_IN_WITH_FACEBOOK, {
-    update: handleLogIn("logInWithFacebook"),
-  });
-  const [
-    logInWithGoogle,
-    { loading: logInWithGoogleLoading, error: logInWithGoogleError },
-  ] = useMutation(LOG_IN_WITH_GOOGLE, {
-    update: handleLogIn("logInWithGoogle"),
-  });
+  // const [
+  //   logInWithFacebook,
+  //   { loading: logInWithFacebookLoading, error: logInWithFacebookError },
+  // ] = useMutation(LOG_IN_WITH_FACEBOOK, {
+  //   update: handleLogIn("logInWithFacebook"),
+  // });
+  // const [
+  //   logInWithGoogle,
+  //   { loading: logInWithGoogleLoading, error: logInWithGoogleError },
+  // ] = useMutation(LOG_IN_WITH_GOOGLE, {
+  //   update: handleLogIn("logInWithGoogle"),
+  // });
 
-  const showError =
-    logInAsGuestError || logInWithFacebookError || logInWithGoogleError;
+  const showError = logInAsGuestError; // || logInWithGoogleError || logInWithFacebookError;
 
   return (
     <div
@@ -175,7 +174,7 @@ export default function Login() {
             Ingresar
           </Button>
         </form>
-        {ENABLE_SOCIAL_MEDIA && (
+        {/* {ENABLE_SOCIAL_MEDIA && (
           <>
             <span className="h-px w-full bg-gray-300 mb-4" />
             <div className="flex items-center space-x-3">
@@ -221,7 +220,7 @@ export default function Login() {
               />
             </div>
           </>
-        )}
+        )} */}
         {showError && (
           <Alert
             type="error"
