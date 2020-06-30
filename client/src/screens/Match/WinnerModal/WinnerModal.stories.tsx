@@ -1,15 +1,16 @@
 import React from "react";
 import { storiesOf } from "@storybook/react";
-import faker from "faker";
 
 import WinnerModal from "./WinnerModal";
 
-const Wrapper = ({ children }) => (
+import { Team } from "../../../types/graphql";
+
+const Wrapper = ({ children }: { children: any }) => (
   <div
     style={{
       width: "100%",
       height: "100vh",
-      position: "relative"
+      position: "relative",
     }}
   >
     {children}
@@ -19,11 +20,11 @@ const Wrapper = ({ children }) => (
 storiesOf("WinnerModal", module)
   .add("winner", () => (
     <Wrapper>
-      <WinnerModal winnerTeam="we" />
+      <WinnerModal winnerTeam={Team.We} />
     </Wrapper>
   ))
   .add("looser", () => (
     <Wrapper>
-      <WinnerModal winnerTeam="them" />
+      <WinnerModal winnerTeam={Team.Them} />
     </Wrapper>
   ));

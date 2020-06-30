@@ -52,7 +52,7 @@ type Match {
   playersCount: Int!
   points: Int!
   creator: Player!
-  players: [Player]!
+  players: [Player!]!
 }
 
 type Card {
@@ -63,7 +63,7 @@ type Card {
 
 type cardsByPlayer {
   playerId: ID!
-  cards: [String]
+  cards: [String!]!
 }
 
 type Action {
@@ -90,19 +90,21 @@ type PlayerMatch {
   playersCount: Int!
   points: Int!
   creator: Player!
-  players: [Player]!
+  players: [Player!]!
   myCards: [Card!]!
   nextPlayer: ID
   isLastPlayerFromTeam: Boolean
   cardsPlayedByPlayer: [cardsByPlayer!]!
   roundWinnerTeam: Team
   matchWinnerTeam: Team
-  myPoints: Int
-  theirPoints: Int
+  myPoints: Int!
+  theirPoints: Int!
   truco: Truco
   envido: Envido
+  # ID of the player who should say their envido points next
   nextPlayerEnvido: ID
-  envidoPoints: [playerEnvidoPoints]
+  # List of say envido actions (how many points each player said they have)
+  envidoPoints: [playerEnvidoPoints!]
   lastAction: Action
 }
 
@@ -113,13 +115,13 @@ enum MatchListUpdateType {
 }
 
 type MatchListUpdate {
-  type: MatchListUpdateType
+  type: MatchListUpdateType!
   id: ID!
   status: MatchStatus!
   playersCount: Int!
   points: Int!
   creator: Player!
-  players: [Player]!
+  players: [Player!]!
 }
 
 enum MatchUpdateType {
@@ -140,19 +142,21 @@ type MatchUpdate {
   playersCount: Int!
   points: Int!
   creator: Player!
-  players: [Player]!
-  myCards: [Card!]
+  players: [Player!]!
+  myCards: [Card!]!
   nextPlayer: ID
   isLastPlayerFromTeam: Boolean
-  cardsPlayedByPlayer: [cardsByPlayer!]
+  cardsPlayedByPlayer: [cardsByPlayer!]!
   roundWinnerTeam: Team
   matchWinnerTeam: Team
-  myPoints: Int
-  theirPoints: Int
+  myPoints: Int!
+  theirPoints: Int!
   truco: Truco
   envido: Envido
+  # ID of the player who should say their envido points next
   nextPlayerEnvido: ID
-  envidoPoints: [playerEnvidoPoints]
+  # List of say envido actions (how many points each player said they have)
+  envidoPoints: [playerEnvidoPoints!]
   lastAction: Action
 }
 
@@ -160,7 +164,7 @@ type Player {
   id: ID!
   name: String!
   avatar: String
-  isFromFirstTeam: Boolean!
+  isFromFirstTeam: Boolean
 }
 
 enum TrucoActions {
@@ -192,8 +196,8 @@ type MatchUpdateResponse {
 }
 
 extend type Query {
-  matches: [Match]!
-  match(id: ID!): PlayerMatch
+  matches: [Match!]!
+  match(id: ID!): PlayerMatch!
 }
 
 # @todo: playCard should return MatchUpdatResponse instead of full match

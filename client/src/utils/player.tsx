@@ -1,2 +1,2 @@
-export const getRandomAvatar = (value, size = 32) =>
+export const getRandomAvatar = (value: any, size = 32) =>
   `https://api.adorable.io/avatars/${size}/${value}`;

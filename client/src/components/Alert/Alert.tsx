@@ -1,12 +1,15 @@
 import React from "react";
+import { IconProp } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
-export default function Alert({
-  icon,
-  message,
-  type, // warning | error,
-  className,
-}) {
+type Props = {
+  icon: IconProp;
+  message: string;
+  type: "warning" | "error";
+  className?: string;
+};
+
+export default function Alert({ icon, message, type, className }: Props) {
   const classesByType = {
     warning: "bg-orange-500",
     error: "bg-red-700",

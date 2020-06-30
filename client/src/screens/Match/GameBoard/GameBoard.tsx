@@ -1,8 +1,9 @@
 import * as R from "ramda";
 import React from "react";
-
 import YourCards from "../YourCards";
-import OtherPlayer from "../OtherPlayer";
+import OtherPlayer, {
+  Position as OtherPlayerPosition,
+} from "../OtherPlayer/OtherPlayer";
 import PlayedCards from "../PlayedCards";
 import Scores from "../Scores";
 import Actions from "../Actions";
@@ -10,28 +11,30 @@ import WinnerModal from "../WinnerModal";
 
 import { getEnvidoFromPlayer } from "../../../utils/envido";
 
-const GameBoard = ({ match, user, matchId, history }) => {
-  const notPlayedCards = R.pipe(
-    R.propOr([], "myCards"),
-    R.reject(R.prop("played"))
-  )(match);
+import { PlayerMatch, User } from "../../../types/graphql";
 
-  const playedCards = R.pipe(
-    R.find(R.propEq("playerId", user.id)),
-    R.prop("cards"),
-    R.defaultTo([])
-  )(match.cardsPlayedByPlayer);
+type Props = {
+  match: PlayerMatch;
+  user: User;
+  matchId: string;
+};
+
+const GameBoard = ({ match, user, matchId }: Props) => {
+  const notPlayedCards = match.myCards.filter((card) => card.played === false);
+
+  const playedCards =
+    match.cardsPlayedByPlayer.find(R.propEq("playerId", user.id))?.cards || [];
 
   const currentHand = playedCards.length + 1;
 
   const isCurrentPlayer = match.nextPlayer === user.id;
 
   const isCurrentEnvidoPlayer = match.nextPlayerEnvido === user.id;
-  const currentPlayerEnvidoPoints =
-    isCurrentEnvidoPlayer &&
-    getEnvidoFromPlayer(match.myCards.map(({ card }) => card));
+  const currentPlayerEnvidoPoints = isCurrentEnvidoPlayer
+    ? getEnvidoFromPlayer(match.myCards.map(({ card }) => card))
+    : 0; // We use 0 here just prevent Typescript from throwing a warning
 
-  const otherPlayers = R.reject(R.propEq("id", user.id), match.players);
+  const otherPlayers = match.players.filter((userN) => userN.id !== user.id);
 
   const waitingResponse =
     (R.pathEq(["envido", "team"], "we", match) &&
@@ -48,7 +51,6 @@ const GameBoard = ({ match, user, matchId, history }) => {
     <div className="w-screen h-screen relative overflow-hidden">
       <Scores
         moreThanTwoPlayers={match.players.length > 2}
-        matchPoints={match.points}
         myPoints={match.myPoints}
         theirPoints={match.theirPoints}
       />
@@ -57,7 +59,7 @@ const GameBoard = ({ match, user, matchId, history }) => {
         matchId={matchId}
         waitingResponse={waitingResponse}
         isCurrentPlayer={isCurrentPlayer}
-        nextEnvidoPlayer={match.nextPlayerEnvido}
+        nextPlayerEnvido={match.nextPlayerEnvido}
         isCurrentEnvidoPlayer={isCurrentEnvidoPlayer}
         envidoPoints={match.envidoPoints}
         cardPlayed={!!playedCards.length}
@@ -73,35 +75,34 @@ const GameBoard = ({ match, user, matchId, history }) => {
         <OtherPlayer
           key={player.id}
           player={player}
-          position="top" //@todo: Refactor to handle 4 and 6 players
-          playedCards={R.pipe(
-            R.find(R.propEq("playerId", player.id)),
-            R.propOr([], "cards")
-          )(match.cardsPlayedByPlayer)}
+          position={OtherPlayerPosition.Top} //@todo: Refactor to handle 4 and 6 players
+          playedCards={
+            match.cardsPlayedByPlayer.find(
+              (cardsByPlayer) => cardsByPlayer.playerId === player.id
+            )?.cards || []
+          }
           isTheirTurn={
             match.nextPlayerEnvido
               ? player.id === match.nextPlayerEnvido
               : player.id === match.nextPlayer
           }
           action={
-            R.pathEq(["lastAction", "playerId"], player.id, match) &&
-            match.lastAction
+            match?.lastAction?.playerId === player.id
+              ? match.lastAction
+              : undefined
           }
         />
       ))}
       <YourCards
         matchId={matchId}
-        player={user}
         enablePlayCards={enablePlayCards}
-        playedCards={playedCards}
         notPlayedCards={notPlayedCards}
         action={
-          R.pathEq(["lastAction", "playerId"], user.id, match) &&
-          match.lastAction
+          match?.lastAction?.playerId === user.id ? match.lastAction : undefined
         }
       />
       {match.matchWinnerTeam && (
-        <WinnerModal history={history} winnerTeam={match.matchWinnerTeam} />
+        <WinnerModal winnerTeam={match.matchWinnerTeam} />
       )}
     </div>
   );

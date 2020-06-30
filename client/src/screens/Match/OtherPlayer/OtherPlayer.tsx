@@ -5,22 +5,40 @@ import ActionDialog from "../../../components/ActionDialog";
 
 import { getRandomAvatar } from "../../../utils/player";
 
+import { Player, Action } from "../../../types/graphql";
+
+export enum Position {
+  Top = "TOP",
+  Left = "LEFT",
+  Right = "RIGHT",
+}
+
+// @TODO: Add styles for 6 players
+const classesByPosition: Dictionary<string> = {
+  [Position.Top]: "top-0 mt-4 left-1/2 transform -translate-x-1/2",
+  [Position.Right]: "right-0 mr-4 top-1/2 transform -translate-y-1/2",
+  [Position.Left]: "left-0 ml-4 top-1/2 transform -translate-y-1/2",
+};
+
+type Props = {
+  player: Player;
+  position: Position;
+  playedCards: string[];
+  isTheirTurn?: boolean;
+  action?: Action | null;
+};
+
 export default function OtherPlayer({
   player,
-  position, // top | right | bottom | left
-  playedCards,
+  position,
+  playedCards = [],
   isTheirTurn,
   action,
-}) {
-  // @TODO: Add styles for 6 players
-  const classesByPosition = {
-    top: "top-0 mt-4 left-1/2 transform -translate-x-1/2",
-    right: "right-0 mr-4 top-1/2 transform -translate-y-1/2",
-    left: "left-0 ml-4 top-1/2 transform -translate-y-1/2",
-  }[position];
+}: Props) {
+  const classes = classesByPosition[position];
 
   return (
-    <div className={`flex flex-col items-center absolute ${classesByPosition}`}>
+    <div className={`flex flex-col items-center absolute ${classes}`}>
       <div className="relative">
         <img
           style={{ border: `3px solid ${isTheirTurn ? "#e53e3e" : "#4F4F4F"}` }}
@@ -46,7 +64,7 @@ export default function OtherPlayer({
         </div>
       </div>
       <span className="text-xs font-medium tracking-wider">{player.name}</span>
-      {action && action.type && <ActionDialog action={action} position="top" />}
+      {action?.type && <ActionDialog action={action} position="top" />}
     </div>
   );
 }

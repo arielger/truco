@@ -1,7 +1,13 @@
-const createCardsOfAllSets = ({ number, score }) =>
-  ["SWORD", "BASTO", "GOLD", "CUP"].map(set => ({
+const createCardsOfAllSets = ({
+  number,
+  score,
+}: {
+  number: number;
+  score: number;
+}) =>
+  ["SWORD", "BASTO", "GOLD", "CUP"].map((set) => ({
     card: `${number}-${set}`,
-    score
+    score,
   }));
 
 export default [
@@ -20,5 +26,5 @@ export default [
   { card: "7-CUP", score: 4 },
   ...createCardsOfAllSets({ number: 6, score: 3 }),
   ...createCardsOfAllSets({ number: 5, score: 2 }),
-  ...createCardsOfAllSets({ number: 4, score: 1 })
+  ...createCardsOfAllSets({ number: 4, score: 1 }),
 ];

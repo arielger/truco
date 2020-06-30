@@ -1,4 +1,4 @@
-import React from "react";
+import React, { CSSProperties } from "react";
 import cs from "classnames";
 
 import styles from "./Card.module.scss";
@@ -9,11 +9,21 @@ const cardOriginalSize = {
   background: 1404,
 };
 
-const stepCardYOffset = {
+const stepCardYOffset: Dictionary<number> = {
   GOLD: 0,
   CUP: 1,
   SWORD: 2,
   BASTO: 3,
+};
+
+type Props = {
+  isPlaceholder?: boolean;
+  isHidden?: boolean;
+  isDisabled?: boolean;
+  card?: string;
+  width?: number;
+  onClick?: (card: string) => void;
+  style?: CSSProperties;
 };
 
 export default function Card({
@@ -22,9 +32,9 @@ export default function Card({
   isDisabled,
   card,
   width = 117,
-  onClick = () => {},
+  onClick,
   style,
-}) {
+}: Props) {
   const sizeFactor = width / cardOriginalSize.width;
   const cardSize = {
     width: cardOriginalSize.width * sizeFactor,
@@ -57,11 +67,20 @@ export default function Card({
     );
   }
 
-  const [cardNumber, cardStep] = card.split("-");
+  if (!card) {
+    throw new Error(
+      "You should pass a card to the Card.tsx component if it is not hidden or placeholder."
+    );
+  }
+
+  const [cardNumberString, cardStep] = card.split("-");
+  const cardNumber = Number(cardNumberString);
 
   return (
     <div
-      onClick={() => onClick(card)}
+      onClick={() => {
+        onClick && onClick(card);
+      }}
       className={cs({
         [styles.card]: true,
         [styles.disabled]: isDisabled,

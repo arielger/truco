@@ -1,19 +1,22 @@
 import * as R from "ramda";
 
-const getCardNumber = card => Number(card.split("-")[0]);
-const getCardStep = card => card.split("-")[1];
+const getCardNumber = (card: string) => Number(card.split("-")[0]);
+const getCardStep = (card: string): string => card.split("-")[1];
 
-const getPointsBySet = cards => {
+const getCardEnvidoValue = (card: string): number => {
+  const cardNumber = getCardNumber(card);
+  return cardNumber > 7 ? 0 : cardNumber;
+};
+
+const getPointsBySet = (cards: string[]): number => {
   const twoCardsBonus = cards.length >= 2 ? 20 : 0;
-  const orderedCards = R.pipe(
-    R.sort(
-      R.descend(card => {
-        const cardNumber = getCardNumber(card);
-        return cardNumber > 7 ? 0 : cardNumber;
-      })
-    ),
-    R.take(2)
-  )(cards);
+  const orderedCards = cards
+    // Sort cards based on descending envido value order
+    .sort(
+      (cardA, cardB) => getCardEnvidoValue(cardB) - getCardEnvidoValue(cardA)
+    )
+    // Take only the first two cards with best envido value
+    .slice(0, 2);
 
   return orderedCards.reduce((total, card) => {
     const cardNumber = getCardNumber(card);
@@ -21,11 +24,13 @@ const getPointsBySet = cards => {
   }, twoCardsBonus);
 };
 
-export const getEnvidoFromPlayer = cards => {
+// How to calculate envido guide
+// https://es.wikipedia.org/wiki/Truco_argentino#Envido
+export const getEnvidoFromPlayer = (cards: string[]): number => {
   return R.pipe(
     R.groupBy(getCardStep),
     R.values,
     R.map(getPointsBySet),
-    points => Math.max(...points)
+    (points: number[]) => Math.max(...points)
   )(cards);
 };

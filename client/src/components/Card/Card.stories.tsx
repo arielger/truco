@@ -5,7 +5,7 @@ import cards from "../../utils/cards";
 
 import Card from "./Card";
 
-const Wrapper = ({ children }) => (
+const Wrapper = ({ children }: { children: any }) => (
   <div
     style={{
       display: "flex",

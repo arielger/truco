@@ -3,7 +3,7 @@ import { storiesOf } from "@storybook/react";
 
 import ActionDialog from "./ActionDialog";
 
-const Wrapper = ({ children } : { children: any }) => (
+const Wrapper = ({ children }: { children: any }) => (
   <div
     style={{
       display: "flex",

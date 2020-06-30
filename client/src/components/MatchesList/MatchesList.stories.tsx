@@ -6,11 +6,17 @@ import randomItem from "random-item";
 
 import MatchesList from "./MatchesList";
 
-const Wrapper = ({ children }) => <div style={{ padding: 60 }}>{children}</div>;
+import { MatchStatus } from "../../types/graphql";
+
+const Wrapper = ({ children }: { children: any }) => (
+  <div style={{ padding: 60 }}>{children}</div>
+);
 
 const createRandomPlayer = () => ({
+  id: faker.random.uuid(),
   name: faker.name.findName(),
   avatar: faker.image.avatar(),
+  isFromFirstTeam: true,
 });
 
 const createRandomMatch = () => {
@@ -22,6 +28,7 @@ const createRandomMatch = () => {
     players: R.times(createRandomPlayer, playersCount),
     playersCount,
     points: randomItem([15, 30]),
+    status: MatchStatus.Playing,
   };
 };
 
@@ -32,6 +39,7 @@ storiesOf("MatchesList", module)
   .add("with matches", () => (
     <Wrapper>
       <MatchesList
+        loading={false}
         matches={R.times(createRandomMatch, 10)}
         subscribeToUpdates={() => () => {}}
       />

@@ -3,15 +3,24 @@ import Spinner from "react-svg-spinner";
 
 // @TODO: Add types, loading state (for now its only the CTA style)
 
+type Props = {
+  styleType?: "default" | "primary";
+  className?: string;
+  isLoading?: boolean;
+  disabled?: boolean;
+  children: string;
+  [x: string]: any; // Type rest of params (spread params)
+};
+
 export default function Button({
-  styleType = "default", // default | primary
+  styleType = "default",
   className,
   isLoading = false,
   disabled = false,
   children,
   ...props
-}) {
-  const classesByType = (isLoading, disabled) =>
+}: Props) {
+  const classesByType = (isLoading: boolean, disabled: boolean) =>
     styleType === "primary"
       ? `${
           isLoading

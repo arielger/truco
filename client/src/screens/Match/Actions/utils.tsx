@@ -1,15 +1,23 @@
 import * as R from "ramda";
 
+import { PlayerMatch, PlayerEnvidoPoints } from "../../../types/graphql";
+
 // @todo -> Add tests for utilities
 
-const getNextTrucoAction = (lastAction) => {
+const getNextTrucoAction = (lastAction: string) => {
   if (!lastAction) return ["TRUCO"];
   if (lastAction === "TRUCO") return ["RETRUCO"];
   if (lastAction === "RETRUCO") return ["VALE_CUATRO"];
   return [];
 };
 
-export const getTrucoActions = (match, currentHand) => {
+export const getTrucoActions = (
+  match: PlayerMatch,
+  currentHand: number
+): {
+  isAnsweringTruco?: boolean;
+  trucoActions?: string[];
+} => {
   return R.cond([
     // Answer to truco action
     [
@@ -44,12 +52,13 @@ export const getTrucoActions = (match, currentHand) => {
 };
 
 // Get posible envido actions based on actions already played
-const getEnvidoActionsFromList = (envidoList) => {
+const getEnvidoActionsFromList = (envidoList: string[]) => {
   const canPlayEnvido = !(
     envidoList.includes("REAL_ENVIDO") ||
     envidoList.includes("FALTA_ENVIDO") ||
     R.pipe(
-      R.filter(R.equals("ENVIDO")),
+      (envidoList: string[]) =>
+        envidoList.filter((envidoItem) => envidoItem === "ENVIDO"),
       R.length,
       (timesEnvidoWasPlayed) => timesEnvidoWasPlayed >= 2
     )(envidoList)
@@ -66,7 +75,10 @@ const getEnvidoActionsFromList = (envidoList) => {
   ];
 };
 
-export const getEnvidoActions = (match, currentHand) => {
+export const getEnvidoActions = (
+  match: PlayerMatch,
+  currentHand: number
+): { isAnsweringEnvido?: boolean; envidoActions?: string[] } => {
   return R.cond([
     // Answer to envido action
     [
@@ -83,7 +95,11 @@ export const getEnvidoActions = (match, currentHand) => {
     // Play the first envido action of the match
     [
       (envido) =>
-        R.isEmpty(envido) && match.isLastPlayerFromTeam && currentHand === 1,
+        !!(
+          R.isEmpty(envido) &&
+          match.isLastPlayerFromTeam &&
+          currentHand === 1
+        ),
       R.always({
         envidoActions: ["ENVIDO", "REAL_ENVIDO", "FALTA_ENVIDO"],
       }),
@@ -93,15 +109,22 @@ export const getEnvidoActions = (match, currentHand) => {
 };
 
 export const getSayEnvidoActions = ({
-  envidoPoints,
+  envidoPoints = [],
   cardPlayed,
   currentPlayerEnvidoPoints,
   playersCount,
+}: {
+  envidoPoints?: PlayerEnvidoPoints[];
+  cardPlayed: boolean;
+  currentPlayerEnvidoPoints: number;
+  playersCount: number;
 }) => {
   const maxOponentEnvidoPoints = R.pipe(
-    R.filter(R.propEq("team", "them")),
+    // Not sure why this works, revise
+    // Related type error with filter https://github.com/DefinitelyTyped/DefinitelyTyped/issues/25581
+    R.filter<any, "array">(R.propEq("team", "them")),
     R.pluck("points"),
-    (points) => Math.max(...points),
+    (points: number[]) => Math.max(...points),
     R.defaultTo(0)
   )(envidoPoints);
 

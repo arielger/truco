@@ -2,9 +2,9 @@ import React from "react";
 import { useMutation, gql } from "@apollo/client";
 import FacebookLogin from "react-facebook-login/dist/facebook-login-render-props";
 import GoogleLogin from "react-google-login";
+import { faFacebookSquare, faGoogle } from "@fortawesome/free-brands-svg-icons";
 import padStart from "pad-start";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFacebookSquare, faGoogle } from "@fortawesome/free-brands-svg-icons";
 import {
   faExclamationCircle,
   faArrowRight,
@@ -18,14 +18,22 @@ import Alert from "../../components/Alert";
 import logo from "./truco-logo.svg";
 import styles from "./Login.module.scss";
 
-// @TODO: Review auth in production env before enable
-const SHOW_PROVIDERS_LOGIN = false;
+const ENABLE_SOCIAL_MEDIA = false;
 
-function getRandomInt(min, max) {
+function getRandomInt(min: number, max: number) {
   min = Math.ceil(min);
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+
+type logInResult = {
+  token: string;
+  user: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
+};
 
 const LOG_IN_AS_GUEST = gql`
   mutation LogInAsGuest($name: String!) {
@@ -70,26 +78,27 @@ export default function Login() {
     `jugador${padStart(getRandomInt(1, 10000), 4, "0")}`
   );
 
-  const handleLogIn = React.useCallback(
-    (key) => (cache, { data }) => {
-      const response = data[key];
-      localStorage.setItem("token", response.token);
-      cache.writeQuery({
-        query: gql`
-          query {
-            user {
-              id
-              name
-              avatar
-            }
-            token
+  // # TODO: Improve type signature
+  const handleLogIn = (key: string) => (
+    cache: any,
+    { data }: { data?: any }
+  ) => {
+    const response = data[key];
+    localStorage.setItem("token", response.token);
+    cache.writeQuery({
+      query: gql`
+        query setLoggedInUser {
+          user {
+            id
+            name
+            avatar
           }
-        `,
-        data: { ...response },
-      });
-    },
-    []
-  );
+          token
+        }
+      `,
+      data: { ...response },
+    });
+  };
 
   const [
     logInAsGuest,
@@ -166,22 +175,22 @@ export default function Login() {
             Ingresar
           </Button>
         </form>
-        {SHOW_PROVIDERS_LOGIN && (
+        {ENABLE_SOCIAL_MEDIA && (
           <>
             <span className="h-px w-full bg-gray-300 mb-4" />
             <div className="flex items-center space-x-3">
               <FacebookLogin
                 appId={process.env.REACT_APP_FACEBOOK_APP_ID}
                 fields="name,email,picture"
-                callback={({ accessToken }) => {
+                callback={({ accessToken }: { accessToken: string }) => {
                   logInWithFacebook({ variables: { accessToken } });
                 }}
-                render={({ onClick, isDisabled, isProcessing }) => (
+                render={({ onClick, isDisabled, isProcessing }: any) => (
                   <button
                     className={`${styles.facebookBtn} flex-1 h-12 rounded-lg text-white focus:outline-none transition ease-in duration-100`}
                     onClick={onClick}
                     disabled={isDisabled}
-                    isLoading={logInWithFacebookLoading || isProcessing}
+                    // loading={logInWithFacebookLoading || isProcessing} // Review when adding social media
                   >
                     <FontAwesomeIcon icon={faFacebookSquare} className="mr-3" />
                     Facebook
@@ -190,9 +199,12 @@ export default function Login() {
               />
               <GoogleLogin
                 clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}
-                onSuccess={({ accessToken }) =>
-                  logInWithGoogle({ variables: { accessToken } })
-                }
+                onSuccess={(loginResponse: any) => {
+                  // GoogleLoginResponseOffline dont have the accessToken prop, review
+                  logInWithGoogle({
+                    variables: { accessToken: loginResponse.accessToken },
+                  });
+                }}
                 onFailure={(error) => {
                   console.log("Error logging in with google", error);
                 }}

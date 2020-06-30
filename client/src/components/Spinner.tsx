@@ -1,7 +1,12 @@
 import React from "react";
 import ReactSVGSpinner from "react-svg-spinner";
 
-export default function Spinner({ text, fullHeight }) {
+type Props = {
+  text?: string;
+  fullHeight?: boolean;
+};
+
+export default function Spinner({ text, fullHeight = false }: Props) {
   return (
     <div
       className={`flex flex-col items-center ${

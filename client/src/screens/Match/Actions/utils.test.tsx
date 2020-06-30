@@ -1,5 +1,7 @@
 import { getSayEnvidoActions } from "./utils";
 
+import { Team, SayEnvidoMoveType } from "../../../types/graphql";
+
 describe("Actions utils", () => {
   describe("2 players", () => {
     test("If it's first player saying envido before playing card", () => {
@@ -8,7 +10,7 @@ describe("Actions utils", () => {
           envidoPoints: [],
           cardPlayed: false,
           currentPlayerEnvidoPoints: 5,
-          playersCount: 2
+          playersCount: 2,
         })
       ).toEqual(["POINTS"]);
     });
@@ -19,7 +21,7 @@ describe("Actions utils", () => {
           envidoPoints: [],
           cardPlayed: true,
           currentPlayerEnvidoPoints: 5,
-          playersCount: 2
+          playersCount: 2,
         })
       ).toEqual(["POINTS", "TABLE"]);
     });
@@ -30,14 +32,14 @@ describe("Actions utils", () => {
           envidoPoints: [
             {
               playerId: "1",
-              moveType: "POINTS",
+              moveType: SayEnvidoMoveType.Points,
               points: 20,
-              team: "them"
-            }
+              team: Team.Them,
+            },
           ],
           cardPlayed: false,
           currentPlayerEnvidoPoints: 30,
-          playersCount: 2
+          playersCount: 2,
         })
       ).toEqual(["N_ARE_MORE"]);
     });
@@ -48,14 +50,14 @@ describe("Actions utils", () => {
           envidoPoints: [
             {
               playerId: "1",
-              moveType: "POINTS",
+              moveType: SayEnvidoMoveType.Points,
               points: 20,
-              team: "them"
-            }
+              team: Team.Them,
+            },
           ],
           cardPlayed: false,
           currentPlayerEnvidoPoints: 5,
-          playersCount: 2
+          playersCount: 2,
         })
       ).toEqual(["CANT_WIN"]);
     });

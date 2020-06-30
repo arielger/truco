@@ -1,6 +1,6 @@
 import React from "react";
 
-const TeamScore = ({ text, points }) => {
+const TeamScore = ({ text, points }: { text: string; points: number }) => {
   return (
     <div
       style={{ backgroundColor: "#4F4F4F" }}
@@ -12,12 +12,17 @@ const TeamScore = ({ text, points }) => {
   );
 };
 
+type Props = {
+  myPoints: number;
+  theirPoints: number;
+  moreThanTwoPlayers: boolean;
+};
+
 export default function Scores({
-  // matchPoints,
   myPoints,
   theirPoints,
   moreThanTwoPlayers,
-}) {
+}: Props) {
   return (
     <div className="flex flex-col w-20 m-3 space-y-2">
       <TeamScore text={moreThanTwoPlayers ? "Nos" : "Yo"} points={myPoints} />

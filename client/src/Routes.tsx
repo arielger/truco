@@ -1,15 +1,21 @@
 import React from "react";
-import { useLazyQuery, useQuery, gql } from "@apollo/client";
+import { gql } from "@apollo/client";
 import { BrowserRouter, Switch, Route, Redirect } from "react-router-dom";
 
 import { Login, Matches, Match } from "./screens";
 import Spinner from "./components/Spinner";
 import UserTracking from "./components/UserTracking";
 
+import {
+  useFetchLocalProfileQuery,
+  useFetchProfileLazyQuery,
+} from "./types/graphql";
+
 import styles from "./App.module.scss";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const FETCH_PROFILE = gql`
-  query user {
+  query fetchProfile {
     user {
       id
       name
@@ -18,8 +24,9 @@ const FETCH_PROFILE = gql`
   }
 `;
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const FETCH_LOCAL_PROFILE = gql`
-  query {
+  query fetchLocalProfile {
     user @client {
       id
       name
@@ -30,18 +37,18 @@ const FETCH_LOCAL_PROFILE = gql`
 `;
 
 export default function Routes() {
-  const {
-    data: { token, user },
-  } = useQuery(FETCH_LOCAL_PROFILE, {
+  const { data: localProfileData } = useFetchLocalProfileQuery({
     returnPartialData: true, // Fix query not updating after login
   });
 
-  const isLoggedIn = !!token;
+  const { token, user } = localProfileData || {};
+
+  const isLoggedIn = Boolean(token);
 
   const [
     fetchProfile,
     { loading: loadingFetchProfile },
-  ] = useLazyQuery(FETCH_PROFILE, { fetchPolicy: "network-only" });
+  ] = useFetchProfileLazyQuery({ fetchPolicy: "network-only" });
 
   // Fetch user profile if user is logged in (token is present) but profile is not loaded yet
   React.useEffect(() => {
@@ -59,12 +66,14 @@ export default function Routes() {
   return (
     <BrowserRouter>
       <UserTracking />
-      {isLoggedIn ? (
+      {isLoggedIn && user ? (
         <div className={styles["layout"]}>
           <Switch>
             <Route
               path="/partidas/:matchId"
-              render={({ ...props }) => <Match user={user} {...props} />}
+              render={({ ...routeProps }) => (
+                <Match user={user} {...routeProps} />
+              )}
             />
             <Route path="/partidas" component={Matches} />
             <Redirect to="/partidas" />

@@ -2,19 +2,29 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar } from "@fortawesome/free-solid-svg-icons";
+import { ApolloError } from "@apollo/client";
 
 import styles from "./MatchesList.module.scss";
+
+import { Match } from "../../types/graphql";
 
 import { getRandomAvatar } from "../../utils/player";
 
 import Spinner from "../Spinner";
+
+type Props = {
+  subscribeToUpdates: () => () => void;
+  matches?: Match[];
+  loading: boolean;
+  error?: ApolloError | undefined;
+};
 
 export default function MatchesList({
   subscribeToUpdates,
   matches,
   loading,
   error,
-}) {
+}: Props) {
   React.useEffect(() => {
     const unsubscribe = subscribeToUpdates();
     return () => {
@@ -26,7 +36,7 @@ export default function MatchesList({
   if (error) {
     return <p className="text-center my-8">Error cargando partidas</p>;
   }
-  if (matches.length === 0) {
+  if (!matches || matches.length === 0) {
     return <p className="text-center my-8">No hay partidas</p>;
   }
 

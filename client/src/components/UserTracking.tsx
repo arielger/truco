@@ -2,19 +2,19 @@ import React from "react";
 import ReactGA from "react-ga";
 import { useLocation } from "react-router-dom";
 
-export const trackEvent = (...args) => {
+export const trackEvent = (eventArgs: ReactGA.EventArgs) => {
   if (process.env.REACT_APP_ENVIRONMENT === "PROD") {
-    ReactGA.event(...args);
+    ReactGA.event(eventArgs);
   } else {
-    console.log(`📈 Will track event in production environment`, args);
+    console.log(`📈 Will track event in production environment`, eventArgs);
   }
 };
 
-export const trackModalView = (...args) => {
+export const trackModalView = (modalName: string) => {
   if (process.env.REACT_APP_ENVIRONMENT === "PROD") {
-    ReactGA.modalview(...args);
+    ReactGA.modalview(modalName);
   } else {
-    console.log(`📈 Will track event in production environment`, args);
+    console.log(`📈 Will track event in production environment`, modalName);
   }
 };
 

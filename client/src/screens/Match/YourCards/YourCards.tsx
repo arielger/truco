@@ -4,6 +4,8 @@ import { useMutation, gql } from "@apollo/client";
 import Card from "../../../components/Card";
 import ActionDialog from "../../../components/ActionDialog";
 
+import { Card as CardType, Action } from "../../../types/graphql";
+
 const PLAY_CARD = gql`
   mutation playCard($matchId: ID!, $cardId: ID!) {
     playCard(matchId: $matchId, cardId: $cardId) {
@@ -20,12 +22,19 @@ const PLAY_CARD = gql`
   }
 `;
 
+type Props = {
+  matchId: string;
+  enablePlayCards: boolean;
+  notPlayedCards: CardType[];
+  action?: Action | null;
+};
+
 export default function YourCards({
   matchId,
   enablePlayCards,
   notPlayedCards,
   action,
-}) {
+}: Props) {
   const [playCard] = useMutation(PLAY_CARD);
 
   return (

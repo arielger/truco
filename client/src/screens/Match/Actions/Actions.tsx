@@ -8,7 +8,9 @@ import {
   getTrucoActions,
   getSayEnvidoActions,
 } from "./utils";
-import actionsToText from "../../../utils/actionsToText.json";
+import actionsToText from "../../../utils/actionsToText";
+
+import { PlayerMatch, PlayerEnvidoPoints } from "../../../types/graphql";
 
 const PLAY_TRUCO = gql`
   mutation playTruco($matchId: ID!, $action: TrucoActions!) {
@@ -46,19 +48,33 @@ const LEAVE_ROUND = gql`
   }
 `;
 
+type Props = {
+  match: PlayerMatch;
+  matchId: string;
+  waitingResponse: boolean;
+  isCurrentPlayer: boolean;
+  currentHand: number;
+  nextPlayerEnvido?: string | null;
+  isCurrentEnvidoPlayer: boolean;
+  envidoPoints?: PlayerEnvidoPoints[] | null;
+  cardPlayed: boolean;
+  currentPlayerEnvidoPoints: number;
+  playersCount: number;
+};
+
 export default function Actions({
   match,
   matchId,
   waitingResponse,
   isCurrentPlayer,
   currentHand,
-  nextEnvidoPlayer,
+  nextPlayerEnvido,
   isCurrentEnvidoPlayer,
   envidoPoints,
   cardPlayed,
   currentPlayerEnvidoPoints,
   playersCount,
-}) {
+}: Props) {
   const [showEnvidoActions, setShowEnvidoActions] = React.useState(false);
 
   const [playTruco] = useMutation(PLAY_TRUCO);
@@ -68,7 +84,7 @@ export default function Actions({
 
   const actionsDisabled =
     waitingResponse ||
-    (nextEnvidoPlayer && !isCurrentEnvidoPlayer) ||
+    (nextPlayerEnvido && !isCurrentEnvidoPlayer) ||
     !isCurrentPlayer;
 
   const disableEnvidoActions =
@@ -87,12 +103,12 @@ export default function Actions({
     disabled: actionsDisabled,
   };
 
-  const { isAnsweringEnvido, envidoActions = [] } = getEnvidoActions(
+  const { isAnsweringEnvido = false, envidoActions = [] } = getEnvidoActions(
     match,
     currentHand
   );
 
-  const { isAnsweringTruco, trucoActions = [] } = getTrucoActions(
+  const { isAnsweringTruco = false, trucoActions = [] } = getTrucoActions(
     match,
     currentHand
   );
@@ -105,7 +121,7 @@ export default function Actions({
           () => isCurrentEnvidoPlayer,
           () => {
             const sayEnvidoActions = getSayEnvidoActions({
-              envidoPoints,
+              envidoPoints: envidoPoints || [],
               cardPlayed,
               currentPlayerEnvidoPoints,
               playersCount,
@@ -117,7 +133,7 @@ export default function Actions({
                 type: sayEnvidoAction,
                 text: actionsToText[sayEnvidoAction].replace(
                   "{{points}}",
-                  currentPlayerEnvidoPoints
+                  String(currentPlayerEnvidoPoints)
                 ),
                 onClick: () =>
                   sayEnvido({

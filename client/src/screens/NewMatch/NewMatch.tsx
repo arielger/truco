@@ -1,19 +1,17 @@
 import React from "react";
 import * as R from "ramda";
 import Modal from "react-modal";
-import { Formik, Form, Field } from "formik";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCheck,
-  faExclamationCircle,
-} from "@fortawesome/free-solid-svg-icons";
+import { Formik, Form } from "formik";
+import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons";
 import { useMutation, gql } from "@apollo/client";
+import { useHistory } from "react-router-dom";
 
 import styles from "./NewMatch.module.scss";
 
 import { trackEvent } from "../../components/UserTracking";
 import Alert from "../../components/Alert";
 import Button from "../../components/Button";
+import Radio from "./Radio";
 
 const CREATE_MATCH = gql`
   mutation createMatch($playersCount: Int!, $points: Int!) {
@@ -23,72 +21,18 @@ const CREATE_MATCH = gql`
   }
 `;
 
-const Radio = ({ id, text, className = "", disabled, ...props }) => (
-  <>
-    <Field type="radio" id={id} {...props}>
-      {({ field }) => {
-        const isChecked = field.checked;
+type Props = {
+  visible: boolean;
+  onClose: () => void;
+};
 
-        return (
-          <div className="relative">
-            <input
-              type="radio"
-              id={id}
-              className="opacity-0 absolute"
-              disabled={disabled}
-              {...field}
-            />
-            <label
-              htmlFor={id}
-              className={`
-                ${styles.radioLabel}
-                h-10 w-full rounded border flex items-center justify-between px-3
-                ${
-                  disabled
-                    ? "text-gray-600 cursor-not-allowed border-gray-300"
-                    : "text-black cursor-pointer border-gray-400"
-                }
-                ${className}
-              `}
-            >
-              <div className="flex items-center">
-                <span
-                  className={`
-                  ${styles.iconContainer}
-                  w-5 h-5 mr-3 text-sm rounded-full inline-flex items-center justify-center
-                  ${disabled ? "bg-gray-200" : "bg-gray-300"}
-              `}
-                >
-                  {isChecked && (
-                    <FontAwesomeIcon
-                      icon={faCheck}
-                      style={{ fontSize: "0.625em" }}
-                      className={`${styles.radioIcon} text-white`}
-                    />
-                  )}
-                </span>
-                <span className="text-sm whitespace-no-wrap">{text}</span>
-              </div>
-              {disabled && (
-                <span
-                  className={`inline-block font-medium text-white rounded-full px-3 uppercase bg-orange-500 ${styles.comingSoon}`}
-                >
-                  Proximamente
-                </span>
-              )}
-            </label>
-          </div>
-        );
-      }}
-    </Field>
-  </>
-);
+export default function NewMatch({ visible, onClose }: Props) {
+  const history = useHistory();
 
-export default function NewMatch({ visible, onClose, history }) {
   const [createMatch, { loading, error }] = useMutation(CREATE_MATCH, {
     onCompleted: (data) => {
       // @TODO => Load match data to cache so we don't need to execute the match query when
-      // when moving to the match page
+      // moving to the match page
       const newMatchId = R.path(["createMatch", "id"], data);
       history.push(`/partidas/${newMatchId}`);
     },
@@ -128,7 +72,7 @@ export default function NewMatch({ visible, onClose, history }) {
                 <span className="text-base inline-block font-medium mb-2">
                   Jugadores:
                 </span>
-                <div name="playersCount" className="flex flex-col space-y-2">
+                <div className="flex flex-col space-y-2">
                   {[
                     { value: "2", disabled: false },
                     { value: "4", disabled: true },
@@ -150,7 +94,7 @@ export default function NewMatch({ visible, onClose, history }) {
                 <span className="text-base inline-block font-medium mb-2">
                   Puntos:
                 </span>
-                <div name="points" className="flex flex-col space-y-2">
+                <div className="flex flex-col space-y-2">
                   {["30", "15"].map((points) => (
                     <Radio
                       key={points}

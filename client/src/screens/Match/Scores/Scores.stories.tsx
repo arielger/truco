@@ -2,7 +2,7 @@ import React from "react";
 import { storiesOf } from "@storybook/react";
 import Scores from "./Scores";
 
-const Wrapper = ({ children }) => (
+const Wrapper = ({ children }: { children: any }) => (
   <div
     style={{
       width: "100vh",

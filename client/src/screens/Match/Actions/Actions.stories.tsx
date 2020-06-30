@@ -2,7 +2,7 @@ import React from "react";
 import { storiesOf } from "@storybook/react";
 import ActionsList from "./ActionsList";
 
-const Wrapper = ({ children }) => (
+const Wrapper = ({ children }: { children: any }) => (
   <div
     style={{
       width: "400px",
@@ -48,13 +48,11 @@ storiesOf("Actions", module)
           {
             type: "ACCEPT",
             text: "Quiero",
-            position: "top",
             onClick: () => {},
           },
           {
             type: "REJECT",
             text: "No quiero",
-            position: "top",
             onClick: () => {},
           },
           {
@@ -80,7 +78,6 @@ storiesOf("Actions", module)
           {
             type: "ACCEPT",
             text: "Quiero",
-            position: "top",
             onClick: () => {
               console.log("Quiero");
             },
@@ -88,7 +85,6 @@ storiesOf("Actions", module)
           {
             type: "REJECT",
             text: "No quiero",
-            position: "top",
             onClick: () => {
               console.log("No quiero");
             },

@@ -1,9 +1,8 @@
 import React from "react";
-import * as R from "ramda";
-import { useQuery, gql } from "@apollo/client";
+import { gql } from "@apollo/client";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFrownOpen } from "@fortawesome/free-solid-svg-icons";
-import { Link } from "react-router-dom";
+import { Link, RouteComponentProps } from "react-router-dom";
 
 import WaitingState from "./WaitingState";
 import GameBoard from "./GameBoard";
@@ -11,64 +10,72 @@ import GameBoard from "./GameBoard";
 import Button from "../../components/Button";
 import Spinner from "../../components/Spinner";
 
-const matchFields = `
-  status
-  playersCount
-  points
-  creator {
-    id
-    name
-    avatar
-  }
-  players {
-    id
-    name
-    avatar
-  }
-  myCards {
-    id
-    card
-    played
-  }
-  cardsPlayedByPlayer {
-    playerId
-    cards
-  }
-  nextPlayer
-  isLastPlayerFromTeam
-  myPoints
-  theirPoints
-  roundWinnerTeam
-  matchWinnerTeam
-  truco {
-    type
-    status
-    team
-    hand
-  }
-  envido {
-    list
-    status
-    team
-  }
-  nextPlayerEnvido
-  envidoPoints {
-    playerId
-    moveType
-    points
-    team
-  }
-  lastAction {
-    playerId
-    type
-    points
-  }
-`;
+import {
+  useFetchMatchQuery,
+  User,
+  MatchUpdatedSubscription,
+  MatchUpdatedSubscriptionVariables,
+} from "../../types/graphql";
 
+// @TODO: Find a way to prevent repeating all fields in MATCH_QUERY and MATCH_SUBSCRIPTION
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const MATCH_QUERY = gql`
-  query matchQuery($id: ID!) {
+  query fetchMatch($id: ID!) {
     match(id: $id) {
-      ${matchFields}
+      id
+      status
+      playersCount
+      points
+      creator {
+        id
+        name
+        avatar
+      }
+      players {
+        id
+        name
+        avatar
+        isFromFirstTeam
+      }
+      myCards {
+        id
+        card
+        played
+      }
+      cardsPlayedByPlayer {
+        playerId
+        cards
+      }
+      nextPlayer
+      isLastPlayerFromTeam
+      myPoints
+      theirPoints
+      roundWinnerTeam
+      matchWinnerTeam
+      truco {
+        type
+        status
+        team
+        hand
+      }
+      envido {
+        list
+        status
+        team
+      }
+      nextPlayerEnvido
+      envidoPoints {
+        playerId
+        moveType
+        points
+        team
+      }
+      lastAction {
+        playerId
+        type
+        points
+      }
     }
   }
 `;
@@ -76,13 +83,74 @@ const MATCH_QUERY = gql`
 const MATCH_SUBSCRIPTION = gql`
   subscription matchUpdated($matchId: ID!) {
     matchUpdated(matchId: $matchId) {
+      id
       type
-      ${matchFields}
+      status
+      playersCount
+      points
+      creator {
+        id
+        name
+        avatar
+      }
+      players {
+        id
+        name
+        avatar
+        isFromFirstTeam
+      }
+      myCards {
+        id
+        card
+        played
+      }
+      cardsPlayedByPlayer {
+        playerId
+        cards
+      }
+      nextPlayer
+      isLastPlayerFromTeam
+      myPoints
+      theirPoints
+      roundWinnerTeam
+      matchWinnerTeam
+      truco {
+        type
+        status
+        team
+        hand
+      }
+      envido {
+        list
+        status
+        team
+      }
+      nextPlayerEnvido
+      envidoPoints {
+        playerId
+        moveType
+        points
+        team
+      }
+      lastAction {
+        playerId
+        type
+        points
+      }
     }
   }
 `;
 
-function Match({ history, user, match: urlMatch }) {
+// https://www.pluralsight.com/guides/react-router-typescript
+type TParams = {
+  matchId: string;
+};
+
+interface Props extends RouteComponentProps<TParams> {
+  user: User;
+}
+
+function Match({ user, match: urlMatch }: Props) {
   const matchId = urlMatch.params.matchId;
 
   const [showCreatorLeft, setShowCreatorLeft] = React.useState(false);
@@ -92,33 +160,32 @@ function Match({ history, user, match: urlMatch }) {
     error,
     data,
     subscribeToMore: subscribeToMatchUpdates,
-    client,
-  } = useQuery(MATCH_QUERY, {
+  } = useFetchMatchQuery({
     variables: { id: matchId },
     fetchPolicy: "network-only",
   });
 
   React.useEffect(() => {
     console.log("Subscribe to match updates");
-    const unsubscribe = subscribeToMatchUpdates({
+
+    const unsubscribe = subscribeToMatchUpdates<
+      MatchUpdatedSubscription,
+      MatchUpdatedSubscriptionVariables
+    >({
       document: MATCH_SUBSCRIPTION,
       variables: { matchId },
       // @TODO: Check if we need to update the whole match object for each update
-      updateQuery: (
-        prev,
-        {
-          subscriptionData: {
-            data: { matchUpdated },
-          },
-        }
-      ) => {
-        console.log("matchUpdated:", matchUpdated);
+      updateQuery: (prev, { subscriptionData }) => {
+        const {
+          type: updateType,
+          ...matchUpdated
+        } = subscriptionData?.data?.matchUpdated;
 
-        if (R.propEq("type", "CREATOR_LEFT_GAME", matchUpdated)) {
+        if (updateType === "CREATOR_LEFT_GAME") {
           setShowCreatorLeft(true);
         }
 
-        return { ...prev, match: matchUpdated };
+        return { ...prev, match: { ...prev.match, ...matchUpdated } };
       },
     });
     return () => {
@@ -126,8 +193,10 @@ function Match({ history, user, match: urlMatch }) {
     };
   }, [matchId, subscribeToMatchUpdates]);
 
+  const match = data?.match;
+
   // @TODO: Improve loading and error screens
-  if (loading) {
+  if (loading || !match) {
     return <Spinner fullHeight text="Cargando partida" />;
   }
   if (error)
@@ -146,35 +215,26 @@ function Match({ history, user, match: urlMatch }) {
       </div>
     );
 
-  const match = R.propOr({}, "match", data);
-
-  const joinedMatch = R.pipe(
-    R.pluck("id"),
-    R.includes(user.id)
-  )(match.players || []);
+  const joinedMatch =
+    Boolean(user?.id) &&
+    match?.players.map((player) => player.id).includes(user.id);
 
   return (
     <>
       {match.status === "waiting" ? (
         <WaitingState
-          userId={user.id}
+          userId={user?.id}
           matchId={matchId}
           players={match.players}
           points={match.points}
           playersCount={match.playersCount}
           creator={match.creator}
-          isCreator={user.id === match.creator.id}
+          isCreator={user?.id === match.creator.id}
           joinedMatch={joinedMatch}
           showCreatorLeft={showCreatorLeft}
         />
       ) : match.status === "playing" ? (
-        <GameBoard
-          match={match}
-          client={client}
-          user={user}
-          matchId={matchId}
-          history={history}
-        />
+        <GameBoard match={match} user={user} matchId={matchId} />
       ) : match.status === "finished" ? (
         <span>La partida ya ha finalizado.</span>
       ) : null}

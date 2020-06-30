@@ -1,9 +1,8 @@
 import * as R from "ramda";
 import React from "react";
 import Modal from "react-modal";
-import { useHistory } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Prompt } from "react-router-dom";
+import { Prompt, useHistory } from "react-router-dom";
 import {
   faStar,
   faSeedling,
@@ -18,6 +17,8 @@ import styles from "./WaitingState.module.scss";
 
 import Button from "../../../components/Button";
 import Alert from "../../../components/Alert";
+
+import { Player } from "../../../types/graphql";
 
 const JOIN_MATCH = gql`
   mutation joinMatch($matchId: ID!) {
@@ -36,7 +37,13 @@ const LEAVE_MATCH = gql`
   }
 `;
 
-function CreatorLeftModal({ isVisible, history }) {
+type CreatorLeftModalProps = {
+  isVisible: boolean;
+};
+
+function CreatorLeftModal({ isVisible }: CreatorLeftModalProps) {
+  const history = useHistory();
+
   return (
     <Modal
       isOpen={isVisible}
@@ -62,6 +69,18 @@ function CreatorLeftModal({ isVisible, history }) {
 
 // @TODO: Add storybook stories
 
+type Props = {
+  userId: string;
+  matchId: string;
+  players: Player[];
+  points: number;
+  playersCount: number;
+  creator: Player;
+  isCreator: boolean;
+  joinedMatch: boolean;
+  showCreatorLeft: boolean;
+};
+
 export default function WaitingState({
   userId,
   matchId,
@@ -72,7 +91,7 @@ export default function WaitingState({
   isCreator,
   joinedMatch,
   showCreatorLeft,
-}) {
+}: Props) {
   const history = useHistory();
   const [joinMatch] = useMutation(JOIN_MATCH, { variables: { matchId } });
   const [leaveMatch] = useMutation(LEAVE_MATCH, { variables: { matchId } });
@@ -83,7 +102,7 @@ export default function WaitingState({
         when={joinedMatch && !showCreatorLeft}
         message={`Estas seguro que deseas abandonar la partida?`}
       />
-      <CreatorLeftModal isVisible={showCreatorLeft} history={history} />
+      <CreatorLeftModal isVisible={showCreatorLeft} />
       <div className="max-w-md mx-auto w-full p-6">
         {isCreator ? (
           <h2 className="font-medium text-3xl mb-2">Tú partida:</h2>

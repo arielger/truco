@@ -2,9 +2,9 @@ import React from "react";
 import { storiesOf } from "@storybook/react";
 import faker from "faker";
 
-import OtherPlayer from "./OtherPlayer";
+import OtherPlayer, { Position } from "./OtherPlayer";
 
-const Wrapper = ({ children }) => (
+const Wrapper = ({ children }: { children: any }) => (
   <div
     style={{
       width: "100%",
@@ -17,20 +17,19 @@ const Wrapper = ({ children }) => (
 );
 
 const player = {
+  id: faker.random.uuid(),
   name: faker.name.findName(),
   avatar: faker.image.avatar(),
+  isFromFirstTeam: false,
 };
 
 storiesOf("OtherPlayer", module)
   .add("top opponent cards (active)", () => (
     <Wrapper>
       <OtherPlayer
-        isCurrentUser={false}
         player={player}
-        position="top"
-        playedCards={[{}]}
-        enablePlayCards={true}
-        handlePlayCard={() => {}}
+        position={Position.Top}
+        playedCards={[]}
         isTheirTurn={true}
       />
     </Wrapper>
@@ -38,25 +37,15 @@ storiesOf("OtherPlayer", module)
   .add("left opponent cards (with action)", () => (
     <Wrapper>
       <OtherPlayer
-        isCurrentUser={false}
         player={player}
-        position="left"
-        action={{ type: "ACCEPT" }}
-        playedCards={[{}]}
-        enablePlayCards={true}
-        handlePlayCard={() => {}}
+        position={Position.Left}
+        action={{ playerId: "test-id", type: "ACCEPT" }}
+        playedCards={[]}
       />
     </Wrapper>
   ))
   .add("right opponent cards", () => (
     <Wrapper>
-      <OtherPlayer
-        isCurrentUser={false}
-        player={player}
-        position="right"
-        playedCards={[{}]}
-        enablePlayCards={true}
-        handlePlayCard={() => {}}
-      />
+      <OtherPlayer player={player} position={Position.Right} playedCards={[]} />
     </Wrapper>
   ));

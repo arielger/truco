@@ -1,10 +1,9 @@
 import React from "react";
 import { storiesOf } from "@storybook/react";
-import faker from "faker";
 
 import YourCards from "./YourCards";
 
-const Wrapper = ({ children }) => (
+const Wrapper = ({ children }: { children: any }) => (
   <div
     style={{
       width: "100%",
@@ -16,34 +15,28 @@ const Wrapper = ({ children }) => (
   </div>
 );
 
-const player = {
-  name: faker.name.findName(),
-  avatar: faker.image.avatar(),
-};
-
 storiesOf("YourCards", module).add("your cards", () => (
   <Wrapper>
     <YourCards
-      isCurrentUser={true}
-      player={player}
-      position="bottom"
-      playedCards={[]}
+      matchId="match-id"
       enablePlayCards={true}
       notPlayedCards={[
         {
-          id: 1,
+          id: "1",
           card: "10-BASTO",
+          played: false,
         },
         {
-          id: 2,
+          id: "2",
           card: "1-SWORD",
+          played: false,
         },
         {
-          id: 3,
+          id: "3",
           card: "6-CUP",
+          played: false,
         },
       ]}
-      handlePlayCard={() => {}}
     />
   </Wrapper>
 ));

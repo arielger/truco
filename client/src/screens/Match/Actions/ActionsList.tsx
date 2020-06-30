@@ -3,7 +3,15 @@ import * as R from "ramda";
 
 import styles from "./Actions.module.scss";
 
-const ActionButton = ({ type, className = "", ...props }) => (
+const ActionButton = ({
+  type,
+  className = "",
+  ...props
+}: {
+  type?: string;
+  className?: string;
+  [x: string]: any;
+}) => (
   <button
     {...props}
     className={`
@@ -21,9 +29,18 @@ const ActionButton = ({ type, className = "", ...props }) => (
   ></button>
 );
 
-export default function ActionsList({
-  actions = [], // { type: String, text: String, onClick: Function, disabled: Boolean }
-}) {
+type Action = {
+  type?: string;
+  text: string;
+  onClick: () => void;
+  disabled?: boolean;
+};
+
+type Props = {
+  actions: Array<Action>;
+};
+
+export default function ActionsList({ actions = [] }: Props) {
   const [topActions, bottomActions] = R.partition(
     (action) => action.type === "ACCEPT" || action.type === "REJECT",
     actions
