@@ -22,7 +22,7 @@
     "graphql": "^14.1.1",
     "graphql-subscriptions": "^1.0.0",
     "jsonwebtoken": "^8.5.0",
-    "mongoose": "^5.4.15",
+    "mongoose": "^5.7.5",
     "mongoose-hidden": "^1.6.1",
     "nodemon": "^1.18.10",
     "passport": "^0.4.0",
