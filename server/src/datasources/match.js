@@ -1055,7 +1055,7 @@ class MatchAPI extends DataSource {
 
     if (!currentRound.nextPlayer.equals(userId)) {
       throw new Error(
-        `The player with the id ${userId} can't leave the round now.`
+        `NOT_NEXT_PLAYER: The player with the id ${userId} can't leave the round now.`
       );
     }
 
@@ -1074,13 +1074,13 @@ class MatchAPI extends DataSource {
     const isLastPlayerInHandFromTeam =
       R.intersection(
         teamPlayersIds,
-        R.pluck("data", currentRound.playersOutOfHand)
+        R.pluck("data", currentRound.playersOutOfRound)
       ).length ===
       match.players.length / 2 - 1;
 
     const roundTrucoPoints = getRoundTrucoPoints(currentRound);
 
-    const isEnvidoPending = R.propEq("status", "PENDING")(roundEnvido);
+    const isEnvidoPending = R.propEq("status", "PENDING")(roundEnvido || {});
 
     // Only add envido points if envido is pending
     const envidoPoints = isEnvidoPending
@@ -1109,7 +1109,7 @@ class MatchAPI extends DataSource {
         matchId,
         {
           $push: {
-            [`rounds.${currentRoundIndex}.playersOutOfHand`]: userId,
+            [`rounds.${currentRoundIndex}.playersOutOfRound`]: userId,
           },
           ...(isLastPlayerInHandFromTeam
             ? {
