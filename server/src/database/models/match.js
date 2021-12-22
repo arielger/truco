@@ -4,9 +4,48 @@ const mongooseHidden = require("mongoose-hidden")();
 const { cards } = require("../../utils/cards");
 
 const cardValidator = {
-  validator: (card) => cards.includes(card),
+  validator: (card) => cards.map(({ card: cardString }) => cardString === card),
   message: (props) => `${props.value} is not a valid card`,
 };
+
+const trucoSchema = new mongoose.Schema({
+  type: {
+    type: String,
+    enum: ["TRUCO", "RETRUCO", "VALE_CUATRO"],
+    required: true,
+  },
+  status: {
+    type: String,
+    enum: ["ACCEPTED", "REJECTED", "PENDING"],
+    required: true,
+  },
+  isFromFirstTeam: {
+    type: Boolean,
+    required: true,
+  },
+  hand: {
+    type: Number,
+    required: true,
+  },
+});
+
+const envidoSchema = new mongoose.Schema({
+  list: [
+    {
+      type: String,
+      enum: ["ENVIDO", "REAL_ENVIDO", "FALTA_ENVIDO"],
+    },
+  ],
+  status: {
+    type: String,
+    enum: ["ACCEPTED", "REJECTED", "PENDING"],
+    required: true,
+  },
+  isFromFirstTeam: {
+    type: Boolean,
+    required: true,
+  },
+});
 
 const roundSchema = new mongoose.Schema({
   winner: {
@@ -19,7 +58,6 @@ const roundSchema = new mongoose.Schema({
         winnerTeam: {
           type: String,
           enum: ["first", "second", "tie"],
-          required: true,
         },
         initialPlayerIndex: {
           type: Number,
@@ -98,46 +136,16 @@ const roundSchema = new mongoose.Schema({
     required: true,
   },
   truco: {
-    type: {
-      type: String,
-      enum: ["TRUCO", "RETRUCO", "VALE_CUATRO"],
-      required: true,
-    },
-    status: {
-      type: String,
-      enum: ["ACCEPTED", "REJECTED", "PENDING"],
-      required: true,
-    },
-    isFromFirstTeam: {
-      type: Boolean,
-      required: true,
-    },
-    hand: {
-      type: Number,
-      required: true,
-    },
+    type: trucoSchema,
+    required: false,
   },
   envido: {
-    list: [
-      {
-        type: String,
-        enum: ["ENVIDO", "REAL_ENVIDO", "FALTA_ENVIDO"],
-      },
-    ],
-    status: {
-      type: String,
-      enum: ["ACCEPTED", "REJECTED", "PENDING"],
-      required: true,
-    },
-    isFromFirstTeam: {
-      type: Boolean,
-      required: true,
-    },
+    type: envidoSchema,
+    required: false,
   },
   nextPlayerEnvido: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: true,
   },
   envidoPoints: [
     {
@@ -159,7 +167,7 @@ const roundSchema = new mongoose.Schema({
       },
     },
   ],
-  playersOutOfHand: [
+  playersOutOfRound: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

@@ -1,0 +1,16 @@
+# Only used for graphql-codegen code generation
+# https://github.com/dotansimha/graphql-code-generator/issues/1654#issuecomment-480571116
+
+directive @client on FIELD
+
+type User {
+  id: ID
+  name: String
+  email: String
+  avatar: String
+}
+
+extend type Query {
+  token: String
+  user: User
+}

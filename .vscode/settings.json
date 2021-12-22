@@ -1,5 +1,6 @@
 {
   "eslint.workingDirectories": ["./client", "./server"],
   "eslint.enable": true,
-  "eslint.packageManager": "yarn"
+  "eslint.packageManager": "yarn",
+  "typescript.tsserver.experimental.enableProjectDiagnostics": true
 }
