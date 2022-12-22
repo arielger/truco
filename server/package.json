@@ -21,7 +21,7 @@
     "dotenv-safe": "^6.1.0",
     "graphql": "^14.1.1",
     "graphql-subscriptions": "^1.0.0",
-    "jsonwebtoken": "^8.5.0",
+    "jsonwebtoken": "^9.0.0",
     "mongoose": "^5.4.15",
     "mongoose-hidden": "^1.6.1",
     "nodemon": "^1.18.10",
